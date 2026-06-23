@@ -36,7 +36,7 @@
 .lb__title span{color:var(--muted); font-weight:600;}
 .lb__title #lbTitleName{color:var(--brand); font-weight:800;}
 .lb__titlesection{grid-column:2; display:flex; flex-direction:column; gap:4px; align-items:center; text-align:center;}
-.lb__date{font-family:var(--font-display); font-size:30px; font-weight:400; color:var(--muted); letter-spacing:.04em;
+.lb__date{font-family:var(--font-display); font-size:clamp(15px,2.4vw,30px); font-weight:400; color:var(--muted); letter-spacing:.04em;
   text-transform:uppercase;}
 .lb__updated{font-family:var(--font-mono); font-size:11px; color:var(--muted);
   display:flex; align-items:center; gap:6px; white-space:nowrap;}
@@ -99,8 +99,8 @@
 .lb__end{display:flex; align-items:center; gap:10px; justify-self:end;}
 .lb__trend{font-size:12px; font-family:var(--font-mono); font-weight:700; width:30px; text-align:right;}
 .lb__trend.up{color:var(--up);} .lb__trend.down{color:var(--down);} .lb__trend.same{color:var(--muted); opacity:.5;}
-.lb__rowclass{font-family:var(--font-mono); font-weight:400; font-size:14px;
-  color:var(--muted); background:none; padding:0; white-space:nowrap; line-height:1.2;}
+.lb__rowclass{display:block; font-family:var(--font-mono); font-weight:400; font-size:13px;
+  color:var(--muted); background:none; padding:0; margin-top:3px; white-space:nowrap; line-height:1.2;}
 .lb__time{font-family:var(--font-mono); font-weight:700; font-size:20px; text-align:right; min-width:118px; line-height:1.1;}
 .lb__time small{font-size:11px; color:var(--muted); font-weight:500; display:block; letter-spacing:.04em; margin-top:2px;}
 .lb__time.best{color:var(--brand-2);} .lb__time.best small{color:var(--brand-2); opacity:.9;}
@@ -150,6 +150,7 @@
 @media(max-width:560px){
   .lb__heatgrid{grid-template-columns:1fr;}
   .lb__colhead,.lb__row{grid-template-columns:34px 40px 1fr auto; gap:10px;}
+  .lb__row{min-width:0;}
   .lb__pos{font-size:19px;}
   .lb__trend{display:none;}
   .lb__end{gap:6px;}

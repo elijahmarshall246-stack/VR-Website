@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Timing | Vaucluse Raceway</title>
+  <meta name="description" content="Live timing and results from Vaucluse Raceway — RallySprint qualifying and knockouts, updating in real time.">
+  <link rel="canonical" href="https://results.vaucluseraceway.com/happening-now">
+  <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon.png?v=10">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=10">
+
+  <link rel="preload" href="fonts/racing-sans-one-400.woff2" as="font" type="font/woff2" crossorigin>
+
+  <link rel="stylesheet" href="css/tokens.css?v=21">
+  <link rel="stylesheet" href="css/shell.css?v=22">
+  <link rel="stylesheet" href="css/board.css?v=22">
+
+  <script defer src="config.js?v=20"></script>
+  <script defer src="js/shell.js?v=20"></script>
+  <script defer src="js/board.js?v=7"></script>
+  <script defer src="js/classfilter.js?v=20"></script>
+  <script defer src="js/qualtabs.js?v=20"></script>
+</head>
+<body>
+
+  <header class="vr-header">
+    <div class="vr-header__inner">
+      <a class="vr-logo" href="https://vaucluseraceway.com" aria-label="Vaucluse Raceway — main site">
+        <img src="assets/vr-logo.svg" alt="Vaucluse Raceway" width="188" height="68">
+      </a>
+      <nav class="vr-nav" aria-label="Results sections">
+        <a class="vr-nav__main" href="https://vaucluseraceway.com">Home</a>
+        <a class="vr-nav__link is-active" href="/happening-now" aria-current="page"><span class="vr-livedot" aria-hidden="true"></span>Happening Now</a>
+        <a class="vr-nav__link" href="/past-events">Past Events</a>
+      </nav>
+    </div>
+  </header>
+
+  <button id="hamburger-btn" aria-label="Open menu" aria-controls="mobile-menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+  <nav id="mobile-menu" aria-label="Mobile menu">
+    <a href="https://vaucluseraceway.com">Home</a>
+    <a class="is-active" href="/happening-now" aria-current="page"><span class="vr-livedot" aria-hidden="true"></span>Happening Now</a>
+    <a href="/past-events">Past Events</a>
+  </nav>
+
+  <main class="vr-main">
+    <div class="vr-container">
+
+      <div class="vr-state is-on" id="vrLiveLoading">
+        <div class="vr-spinner" aria-hidden="true"></div>
+        <div class="vr-state__msg">Checking for a live event…</div>
+      </div>
+
+      <div class="vr-board-wrap" id="vrLiveBoard" style="display:none">
+        <div class="lb" id="lb">
+          <div class="lb__head">
+            <span class="lb__live" id="lbLive" style="display:none"><span class="lb__dot"></span>Live</span>
+            <div class="lb__titlesection">
+              <h1 class="lb__title"><span id="lbTitleName">RallySprint</span> <span id="lbTitleSub">· Qualifying</span></h1>
+              <div class="lb__date" id="lbDate">22nd, August, 2026</div>
+            </div>
+            <div class="lb__headright">
+              <div class="lb__updated" id="lbUpdated" style="display:none"><span class="udot"></span><span id="lbUpdatedTxt">—</span></div>
+            </div>
+          </div>
+
+          <div class="lb__tabrow">
+            <div class="lb__tabs" id="lbTabs">
+              <button class="lb__tab active" data-view="0">Qualifying</button>
+              <button class="lb__tab" data-view="1">Knockouts</button>
+            </div>
+            <div class="vr-classfilter" id="vrClassFilter" role="group" aria-label="Filter by class"></div>
+          </div>
+
+          <div class="lb__err" id="lbErr"></div>
+
+          <div class="lb__views loading" id="lbViews" aria-live="polite">
+            <div class="lb__spinner" id="lbSpinner">
+              <div class="lb__spinring"></div>
+              <span>Tuning in progress… Stand By.</span>
+            </div>
+            <section class="view" id="lbQualifying">
+              <div class="lb__subtabs" id="lbSubtabs" role="group" aria-label="Qualifying views">
+                <button class="lb__subtab active" data-sub="overall" type="button">Overall Fastest</button>
+                <button class="lb__subtab" data-sub="heats" type="button">By Heats</button>
+              </div>
+              <section class="view" id="lbOverall">
+                <div class="lb__colhead"><span>Pos</span><span>No.</span><span>Driver</span><span class="lb__colend"><span class="r">Best Time</span></span></div>
+                <div class="lb__list" id="lbList"></div>
+              </section>
+              <section class="view" id="lbHeats">
+                <div class="lb__heatgrid" id="lbHeatGrid"></div>
+              </section>
+            </section>
+            <section class="view hide" id="lbKnockouts">
+              <div class="lb__viewlabel">Knockouts</div>
+              <div class="lb__kcat" id="lbKcatBtns"></div>
+              <div class="lb__kcatnote">Swipe left and right to see the full bracket.</div>
+              <div class="lb__bracket" id="lbBracket"></div>
+            </section>
+          </div>
+
+          <div class="lb__ktvlabel" id="lbKtvLabel"></div>
+
+          <div class="lb__foot">
+            All times are provisional until the end of the event.
+          </div>
+        </div>
+      </div>
+
+      <div class="vr-state" id="vrNoLive">
+        <div class="vr-state__title">No <span style="color:var(--vr-orange)">Live Event</span></div>
+        <div class="vr-state__msg">Follow <a href="https://instagram.com/vaucluse_raceway" target="_blank" rel="noopener">@vaucluse_raceway</a> to catch the next one.</div>
+        <a class="vr-btn" href="/past-events">See past events <span class="vr-arrow">→</span></a>
+      </div>
+    </div>
+  </main>
+
+  <footer id="vrFooter"></footer>
+
+</body>
+</html>

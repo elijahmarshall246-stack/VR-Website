@@ -158,8 +158,8 @@
       var classLbl=clazz?'<span class="lb__rowclass">'+esc(clazz)+'</span>':'';
       html+='<div class="'+cls+'" data-id="'+esc(d.id)+'">'+
         '<div class="lb__pos">'+pos+'</div><div class="lb__num">'+esc(String(d.num))+'</div>'+
-        '<div class="lb__who"><div style="min-width:0"><div class="lb__name">'+esc(d.driver)+'</div></div></div>'+
-        '<div class="lb__end">'+classLbl+'<span class="lb__trend same">–</span>'+
+        '<div class="lb__who"><div style="min-width:0"><div class="lb__name">'+esc(d.driver)+'</div>'+classLbl+'</div></div>'+
+        '<div class="lb__end"><span class="lb__trend same">–</span>'+
         '<div class="lb__time'+(d.ms===leaderMs?' best':'')+'">'+fmtTime(d.ms)+'<small>'+gap+'</small></div>'+roundLbl+'</div>'+
         '</div>';
     });
