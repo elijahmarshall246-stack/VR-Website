@@ -101,7 +101,13 @@ body.vr-live .vr-livedot{display:inline-block; animation:vrlivepulse 1.6s ease-o
   padding:10px 14px; overflow:hidden;
   box-shadow:0 1px 2px rgba(0,0,0,.05), 0 18px 40px -28px rgba(0,0,0,.35);
 }
-@media(max-width:560px){.vr-board-wrap{padding:6px 8px;}}
+@media(max-width:560px){
+  .vr-container{padding:0;}
+  .vr-board-wrap{padding:0;}
+  .vr-main{padding:28px 0 0;}
+  .vr-back{margin-bottom:6px; margin-left:14px;}
+  #vrPrevList{padding:0 20px;}
+}
 
 .vr-btn{
   display:inline-flex; align-items:center; gap:10px; cursor:pointer;

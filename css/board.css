@@ -36,7 +36,7 @@
 .lb__title span{color:var(--muted); font-weight:600;}
 .lb__title #lbTitleName{color:var(--brand); font-weight:800;}
 .lb__titlesection{grid-column:2; display:flex; flex-direction:column; gap:4px; align-items:center; text-align:center;}
-.lb__date{font-family:var(--font-display); font-size:clamp(15px,2.4vw,30px); font-weight:400; color:var(--muted); letter-spacing:.04em;
+.lb__date{font-family:var(--font-display); font-size:clamp(18px,2.8vw,30px); font-weight:400; color:var(--muted); letter-spacing:.04em;
   text-transform:uppercase;}
 .lb__updated{font-family:var(--font-mono); font-size:11px; color:var(--muted);
   display:flex; align-items:center; gap:6px; white-space:nowrap;}

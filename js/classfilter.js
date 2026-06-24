@@ -62,12 +62,12 @@
 
   function stampClasses(){
     document.querySelectorAll('#lbList .lb__row').forEach(function(row){
-      var end = row.querySelector('.lb__end'); if (!end) return;
-      var nameEl = row.querySelector('.lb__name');
-      var cls = classOf(nameEl ? nameEl.textContent : '');
-      var tag = end.querySelector('.lb__rowclass');
+      var nameEl = row.querySelector('.lb__name'); if (!nameEl) return;
+      var holder = nameEl.parentNode;  // the min-width:0 wrapper under .lb__who
+      var cls = classOf(nameEl.textContent);
+      var tag = holder.querySelector('.lb__rowclass');
       if (cls){
-        if (!tag){ tag = document.createElement('span'); tag.className = 'lb__rowclass'; end.insertBefore(tag, end.firstChild); }
+        if (!tag){ tag = document.createElement('span'); tag.className = 'lb__rowclass'; holder.appendChild(tag); }
         if (tag.textContent !== cls) tag.textContent = cls;
       } else if (tag){ tag.remove(); }
     });
