@@ -25,13 +25,14 @@
 
   var el = function(id){ return document.getElementById(id); };
   var board = el('vrPrevBoard'), back = el('vrBack');
-  var listView = el('vrPrevList'), typeFilter = el('vrTypeFilter'), eventList = el('vrEventList');
+  var listView = el('vrPrevList'), typeFilter = el('vrTypeFilter'), yearFilter = el('vrYearFilter'), eventList = el('vrEventList');
+  var CANON_TYPES = ['RallySprint','Rallycross','Stage Rally'];
   var loading = el('vrPrevLoading'), empty = el('vrPrevEmpty'), error = el('vrPrevError');
   var list = el('lbList'), grid = el('lbHeatGrid');
   var pdfWrap = el('vrPdfWrap'), pdfLink = el('vrPdfLink');
 
   var events = [], cache = {}, knockoutData = [], _seq = 0;
-  var activeType = '__all', activeClass = '__all';
+  var activeType = '__all', activeYear = '__all', activeClass = '__all';
   var classMap = {}, classList = [], carNames = {};
 
   function esc(s){ return String(s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
@@ -346,27 +347,40 @@
     window.scrollTo({top:0, behavior:'auto'});
   }
 
+  function buildSelect(label, opts, onChange){
+    var html='<span class="vr-filterlabel">'+esc(label)+'</span><select>';
+    opts.forEach(function(o){ html+='<option value="'+esc(String(o.value))+'">'+esc(o.text)+'</option>'; });
+    html+='</select>';
+    return { html:html, wire:function(host){
+      var sel=host.querySelector('select');
+      sel.onchange=function(){ onChange(sel.value); };
+    } };
+  }
   function buildTypeFilter(){
-    var types=[];
-    events.forEach(function(e){ if(e.type && types.indexOf(e.type)===-1) types.push(e.type); });
-    types.sort(function(a,b){ return a.localeCompare(b); });
-    if(types.length < 2){ typeFilter.style.display='none'; typeFilter.innerHTML=''; return; }
-    var html='<span class="vr-filterlabel">Filter:</span>'+
-             '<button class="vr-typechip is-active" data-type="__all">All Types</button>';
-    types.forEach(function(t){ html+='<button class="vr-typechip" data-type="'+esc(t)+'">'+esc(t)+'</button>'; });
-    typeFilter.innerHTML=html; typeFilter.style.display='';
-    Array.prototype.forEach.call(typeFilter.querySelectorAll('.vr-typechip'), function(b){
-      b.onclick=function(){
-        activeType=b.dataset.type;
-        Array.prototype.forEach.call(typeFilter.querySelectorAll('.vr-typechip'), function(x){ x.classList.toggle('is-active', x===b); });
-        renderEventList();
-      };
+    // Always offer the three race types (RallySprint, Rallycross, Stage Rally),
+    // then append any other type that turns up in the data.
+    var types=CANON_TYPES.slice();
+    events.forEach(function(e){
+      if(e.type && !types.some(function(t){ return norm(t)===norm(e.type); })) types.push(e.type);
     });
+    var opts=[{value:'__all', text:'All Types'}].concat(types.map(function(t){ return {value:t, text:t}; }));
+    var s=buildSelect('Type', opts, function(v){ activeType=v; renderEventList(); });
+    typeFilter.innerHTML=s.html; typeFilter.style.display=''; s.wire(typeFilter);
+  }
+  function buildYearFilter(){
+    var years=[];
+    events.forEach(function(e){ if(e.year && years.indexOf(e.year)===-1) years.push(e.year); });
+    years.sort(function(a,b){ return b-a; });
+    if(!years.length){ yearFilter.style.display='none'; yearFilter.innerHTML=''; return; }
+    var opts=[{value:'__all', text:'All Years'}].concat(years.map(function(y){ return {value:y, text:y}; }));
+    var s=buildSelect('Year', opts, function(v){ activeYear=v; renderEventList(); });
+    yearFilter.innerHTML=s.html; yearFilter.style.display=''; s.wire(yearFilter);
   }
   function renderEventList(){
     var html='';
     events.forEach(function(ev,i){
-      if(activeType!=='__all' && ev.type!==activeType) return;
+      if(activeType!=='__all' && norm(ev.type)!==norm(activeType)) return;
+      if(activeYear!=='__all' && String(ev.year)!==String(activeYear)) return;
       html+='<button class="vr-eventcard" type="button" data-i="'+i+'">'+
         '<span class="vr-eventcard__main"><span class="vr-eventcard__name">'+esc(ev.name)+'</span>'+
         (ev.date?'<span class="vr-eventcard__date">'+esc(ev.date)+'</span>':'')+'</span>'+
@@ -375,7 +389,7 @@
           '<span class="vr-eventcard__go" aria-hidden="true">→</span>'+
         '</span></button>';
     });
-    eventList.innerHTML = html || '<div class="vr-state__msg" style="text-align:center;padding:30px 0">No events of this type yet.</div>';
+    eventList.innerHTML = html || '<div class="vr-state__msg" style="text-align:center;padding:30px 0">No events match these filters.</div>';
     Array.prototype.forEach.call(eventList.querySelectorAll('.vr-eventcard'), function(b){
       b.onclick=function(){ selectEvent(events[+b.dataset.i]); };
     });
@@ -416,16 +430,23 @@
         var c=rows[r].c||[];
         var name=cellVal(c[iName]).trim(), tab=cellVal(c[iTab]).trim();
         if(!name||!tab) continue;
+        var dm = iDate>=0?dateMs(c[iDate]):NaN;
+        var dstr = iDate>=0?cellVal(c[iDate]).trim():'';
+        var yr = !isNaN(dm) ? new Date(dm).getFullYear()
+                            : (dstr.match(/\b(?:19|20)\d{2}\b/)||[null])[0];
+        if(yr!=null) yr=+yr;
         events.push({ name:name, tab:tab,
           type: iType>=0?cellVal(c[iType]).trim():'',
-          date: iDate>=0?cellVal(c[iDate]).trim():'',
-          dateMs: iDate>=0?dateMs(c[iDate]):NaN,
+          date: dstr,
+          dateMs: dm,
+          year: yr,
           pdf: iPdf>=0?cellVal(c[iPdf]).trim():'' });
       }
       if(!events.length){ showOnly('empty'); return; }
       events.sort(function(a,b){ if(isNaN(a.dateMs)&&isNaN(b.dateMs))return 0; if(isNaN(a.dateMs))return 1; if(isNaN(b.dateMs))return -1; return b.dateMs-a.dateMs; });
-      activeType='__all';
+      activeType='__all'; activeYear='__all';
       buildTypeFilter();
+      buildYearFilter();
       renderEventList();
       showOnly('list');
     });

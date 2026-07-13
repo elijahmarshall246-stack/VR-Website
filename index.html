@@ -3,12 +3,62 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="refresh" content="0; url=/happening-now">
-  <link rel="canonical" href="https://results.vaucluseraceway.com/happening-now">
   <title>Vaucluse Raceway — Live Results</title>
-  <script>location.replace('/happening-now');</script>
+  <meta name="description" content="Vaucluse Raceway results — follow live timing during an event or browse results from past RallySprint and motorsport events.">
+  <link rel="canonical" href="https://results.vaucluseraceway.com/">
+  <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon.png?v=10">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=10">
+
+  <link rel="preload" href="fonts/racing-sans-one-400.woff2" as="font" type="font/woff2" crossorigin>
+
+  <link rel="stylesheet" href="css/tokens.css?v=21">
+  <link rel="stylesheet" href="css/shell.css?v=28">
+
+  <script defer src="config.js?v=20"></script>
+  <script defer src="js/shell.js?v=20"></script>
 </head>
 <body>
-  <p>Redirecting to <a href="/happening-now">Happening Now</a>…</p>
+
+  <header class="vr-header">
+    <div class="vr-header__inner">
+      <a class="vr-logo" href="https://vaucluseraceway.com" aria-label="Vaucluse Raceway — main site">
+        <img src="assets/vr-logo.svg" alt="Vaucluse Raceway" width="188" height="68">
+      </a>
+      <nav class="vr-nav" aria-label="Results sections">
+        <a class="vr-nav__main" href="https://vaucluseraceway.com">Home</a>
+      </nav>
+    </div>
+  </header>
+
+  <button id="hamburger-btn" aria-label="Open menu" aria-controls="mobile-menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+  <nav id="mobile-menu" aria-label="Mobile menu">
+    <a href="https://vaucluseraceway.com">Home</a>
+  </nav>
+
+  <main class="vr-main">
+    <div class="vr-container">
+      <section class="vr-home" aria-label="Results">
+        <h1 class="vr-home__title">Live <em>Results</em></h1>
+        <p class="vr-home__sub">Where would you like to go?</p>
+        <div class="vr-home__actions">
+          <a class="vr-homecard vr-homecard--live" href="/happening-now">
+            <span class="vr-homecard__label"><span class="vr-livedot" aria-hidden="true"></span>Happening Now</span>
+            <span class="vr-homecard__desc">Live timing &amp; knockouts</span>
+            <span class="vr-homecard__go" aria-hidden="true">→</span>
+          </a>
+          <a class="vr-homecard" href="/past-events">
+            <span class="vr-homecard__label">Past Events</span>
+            <span class="vr-homecard__desc">Browse previous results</span>
+            <span class="vr-homecard__go" aria-hidden="true">→</span>
+          </a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer id="vrFooter"></footer>
+
 </body>
 </html>

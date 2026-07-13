@@ -85,6 +85,61 @@ body.vr-live .vr-livedot{display:inline-block; animation:vrlivepulse 1.6s ease-o
 .vr-main{padding:28px 0 56px; flex:1 0 auto;}
 .vr-footer{flex-shrink:0;}
 
+/* Centered page nav — the Happening Now / Past Events switch that lives at the
+   top-middle of the board pages (moved out of the header). */
+.vr-pagenav{
+  display:flex; justify-content:center; align-items:center; flex-wrap:wrap;
+  gap:10px; margin:0 auto 26px;
+}
+.vr-pagenav__link{
+  display:inline-flex; align-items:center; gap:6px;
+  font-family:var(--vr-font-head); font-weight:700; text-transform:uppercase;
+  letter-spacing:.04em; font-size:15px; text-decoration:none; color:var(--vr-ink-2);
+  padding:12px 26px; border-radius:2.5rem; border:2px solid var(--vr-grey);
+  transition:color .18s, background .18s, border-color .18s; white-space:nowrap;
+}
+.vr-pagenav__link:hover{color:var(--vr-orange); border-color:var(--vr-orange);}
+.vr-pagenav__link.is-active{color:#fff; background:var(--vr-blue-deep); border-color:var(--vr-blue-deep);}
+.vr-pagenav__link.is-active:hover{color:#fff;}
+@media(max-width:560px){
+  #vrPagenav{padding:0 20px;}
+  .vr-pagenav__link{flex:1 1 auto; justify-content:center; font-size:14px; padding:12px 16px;}
+}
+
+/* Home / landing page — the results index that offers the two destinations. */
+.vr-home{
+  display:flex; flex-direction:column; align-items:center; text-align:center;
+  gap:8px; padding:40px 20px 20px; max-width:820px; margin:0 auto;
+}
+.vr-home__eyebrow{
+  font-family:var(--vr-font-mono); font-size:12px; letter-spacing:.18em; text-transform:uppercase;
+  color:var(--vr-orange);
+}
+.vr-home__title{
+  font-family:var(--vr-font-display); font-weight:400; text-transform:uppercase;
+  font-size:clamp(30px,6vw,54px); line-height:1; color:var(--vr-ink); margin:2px 0 0;
+}
+.vr-home__title em{font-style:italic; color:var(--vr-orange); font-weight:400;}
+.vr-home__sub{font-size:15px; color:var(--vr-grey-2); margin:6px 0 22px;}
+.vr-home__actions{
+  display:flex; flex-wrap:wrap; justify-content:center; gap:18px; width:100%;
+}
+.vr-homecard{
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  flex:1 1 260px; max-width:320px; text-decoration:none;
+  background:var(--vr-white); border:2px solid var(--vr-grey); border-radius:18px;
+  padding:30px 24px; transition:border-color .18s, transform .18s, box-shadow .18s;
+}
+.vr-homecard:hover{border-color:var(--vr-orange); transform:translateY(-3px); box-shadow:0 16px 34px -20px rgba(0,0,0,.45);}
+.vr-homecard__label{
+  display:inline-flex; align-items:center; gap:8px;
+  font-family:var(--vr-font-head); font-weight:800; text-transform:uppercase; letter-spacing:.03em;
+  font-size:clamp(20px,3vw,26px); color:var(--vr-ink);
+}
+.vr-homecard--live .vr-homecard__label{color:var(--vr-blue-deep);}
+.vr-homecard__desc{font-family:var(--vr-font-mono); font-size:12px; letter-spacing:.04em; color:var(--vr-grey-2);}
+.vr-homecard__go{font-size:22px; line-height:1; color:var(--vr-orange);}
+
 .vr-pagehead{margin:4px 0 18px; text-align:center;}
 .vr-pagehead__eyebrow{
   font-family:var(--vr-font-mono); font-size:12px; letter-spacing:.18em; text-transform:uppercase;
@@ -161,11 +216,22 @@ body.vr-live .vr-livedot{display:inline-block; animation:vrlivepulse 1.6s ease-o
   font-size:14px; line-height:1.45; color:var(--vr-grey-2); text-align:center;
 }
 .vr-archivenote strong{color:var(--vr-ink); font-weight:700;}
-.vr-typefilter{display:flex; flex-wrap:wrap; align-items:center; gap:10px; max-width:760px; margin:0 auto 22px;}
-.vr-typefilter .vr-filterlabel{
+.vr-filters{max-width:760px; margin:0 auto 22px; display:flex; flex-wrap:wrap; gap:14px;}
+.vr-filterselect{flex:1 1 200px; display:flex; flex-direction:column; gap:6px; min-width:0;}
+.vr-filterselect .vr-filterlabel{
   font-family:var(--vr-font-head); font-weight:700; font-size:12px; text-transform:uppercase;
-  letter-spacing:.04em; color:var(--vr-grey-2); margin-right:2px;
+  letter-spacing:.04em; color:var(--vr-grey-2);
 }
+.vr-filterselect select{
+  width:100%; appearance:none; -webkit-appearance:none; cursor:pointer;
+  font-family:var(--vr-font-head); font-weight:700; font-size:14px; color:var(--vr-ink);
+  background:var(--vr-white); border:2px solid var(--vr-grey); border-radius:12px;
+  padding:12px 40px 12px 16px; transition:border-color .18s;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23F1592A' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 14px center;
+}
+.vr-filterselect select:hover{border-color:var(--vr-orange);}
+.vr-filterselect select:focus{outline:none; border-color:var(--vr-blue-deep);}
 .vr-typechip{
   display:inline-flex; align-items:center; justify-content:center; line-height:1;
   font-family:var(--vr-font-head); font-weight:800; font-size:12px; color:var(--vr-grey-2);

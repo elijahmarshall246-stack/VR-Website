@@ -12,7 +12,7 @@
   <link rel="preload" href="fonts/racing-sans-one-400.woff2" as="font" type="font/woff2" crossorigin>
 
   <link rel="stylesheet" href="css/tokens.css?v=21">
-  <link rel="stylesheet" href="css/shell.css?v=25">
+  <link rel="stylesheet" href="css/shell.css?v=28">
   <link rel="stylesheet" href="css/board.css?v=24">
 
   <script defer src="config.js?v=20"></script>
@@ -30,8 +30,6 @@
       </a>
       <nav class="vr-nav" aria-label="Results sections">
         <a class="vr-nav__main" href="https://vaucluseraceway.com">Home</a>
-        <a class="vr-nav__link is-active" href="/happening-now" aria-current="page"><span class="vr-livedot" aria-hidden="true"></span>Happening Now</a>
-        <a class="vr-nav__link" href="/past-events">Past Events</a>
       </nav>
     </div>
   </header>
@@ -41,12 +39,16 @@
   </button>
   <nav id="mobile-menu" aria-label="Mobile menu">
     <a href="https://vaucluseraceway.com">Home</a>
-    <a class="is-active" href="/happening-now" aria-current="page"><span class="vr-livedot" aria-hidden="true"></span>Happening Now</a>
-    <a href="/past-events">Past Events</a>
   </nav>
 
   <main class="vr-main">
     <div class="vr-container">
+
+      <nav class="vr-pagenav" id="vrPagenav" aria-label="Results sections">
+        <a class="vr-pagenav__link is-active" href="/happening-now" aria-current="page"><span class="vr-livedot" aria-hidden="true"></span>Happening Now</a>
+        <a class="vr-pagenav__link" href="/past-events">Past Events</a>
+      </nav>
+
 
       <div class="vr-state is-on" id="vrLiveLoading">
         <div class="vr-spinner" aria-hidden="true"></div>
