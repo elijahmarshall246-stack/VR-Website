@@ -148,6 +148,11 @@
 .lb.tv .lb__creditlink img, .lb.ktv .lb__creditlink img{height:clamp(28px,3.6vh,42px);}
 
 @media(max-width:560px){
+  .lb__head{grid-template-columns:1fr 1fr;
+    grid-template-areas:"live updated" "title title"; row-gap:8px;}
+  .lb__live{grid-area:live; justify-self:start;}
+  .lb__headright{grid-area:updated; justify-self:end;}
+  .lb__titlesection{grid-area:title;}
   .lb__heatgrid{grid-template-columns:1fr;}
   .lb__colhead,.lb__row{grid-template-columns:34px 40px 1fr auto; gap:10px;}
   .lb__row{min-width:0;}

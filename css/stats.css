@@ -1,0 +1,141 @@
+/* Stats page — records & leaderboards, per discipline.
+   Loads after tokens.css + shell.css (shares the palette and page nav). */
+
+.vr-stats__lede{
+  max-width:640px; margin:0 auto 30px; text-align:center;
+  font-size:15px; color:var(--vr-grey-2);
+}
+
+.vr-stats__progress{font-family:var(--vr-font-mono); font-size:12px; color:var(--vr-grey-2); letter-spacing:.06em;}
+
+/* Category picker --------------------------------------------------------- */
+.vr-stat-picker{max-width:340px; margin:0 auto 30px;}
+.vr-stat-picker .vr-filterlabel{text-align:center;}
+
+/* Discipline section ------------------------------------------------------ */
+.vr-stat-disc{max-width:1080px; margin:0 auto 8px;}
+
+.vr-stat-comingsoon{
+  padding:26px 22px; text-align:center; border:2px dashed var(--vr-grey); border-radius:16px;
+  color:var(--vr-grey-2); font-size:15px;
+}
+.vr-stat-comingsoon strong{color:var(--vr-ink);}
+
+/* Summary totals ---------------------------------------------------------- */
+.vr-stat-totals{display:flex; flex-wrap:wrap; gap:14px; margin:0 0 18px;}
+.vr-stat-total{
+  flex:1 1 120px; text-align:center; padding:16px 12px;
+  background:var(--vr-grey); border-radius:14px;
+}
+.vr-stat-total__num{
+  display:block; font-family:var(--vr-font-display); font-size:clamp(26px,4vw,38px);
+  line-height:1; color:var(--vr-blue-deep);
+}
+.vr-stat-total__lbl{
+  display:block; margin-top:6px; font-family:var(--vr-font-mono); font-size:11px;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--vr-grey-2);
+}
+
+/* Fastest-on-record hero -------------------------------------------------- */
+.vr-stat-hero{
+  position:relative; overflow:hidden; text-align:center;
+  padding:30px 22px; margin:0 0 18px; border-radius:18px; color:#fff;
+}
+.vr-stat-hero--bimma{background:linear-gradient(135deg, var(--vr-blue-deep), var(--vr-blue-ink));}
+.vr-stat-hero--jr{background:linear-gradient(135deg, var(--vr-blue), var(--vr-blue-deep));}
+.vr-stat-hero--overall{background:linear-gradient(135deg, var(--vr-orange), var(--vr-orange-soft));}
+.vr-stat-hero__label{
+  font-family:var(--vr-font-mono); font-size:11px; letter-spacing:.2em; text-transform:uppercase;
+  color:rgba(255,255,255,.8);
+}
+.vr-stat-hero__time{
+  font-family:var(--vr-font-display); font-size:clamp(40px,9vw,72px); line-height:1;
+  margin:8px 0 6px; color:#fff;
+}
+.vr-stat-hero__driver{
+  font-family:var(--vr-font-head); font-weight:800; text-transform:uppercase; letter-spacing:.03em;
+  font-size:clamp(16px,2.4vw,22px);
+}
+.vr-stat-hero__class{
+  display:inline-block; vertical-align:middle; margin-left:8px; padding:2px 10px; border-radius:2rem;
+  font-family:var(--vr-font-mono); font-weight:400; font-size:11px; letter-spacing:.06em; text-transform:none;
+  background:rgba(255,255,255,.2); color:#fff;
+}
+.vr-stat-hero__meta{margin-top:6px; font-family:var(--vr-font-mono); font-size:12px; color:rgba(255,255,255,.75);}
+
+/* Sliding carousel between the fastest records. */
+.vr-stat-heroslider{position:relative; overflow:hidden; border-radius:18px; margin:0 0 18px;}
+.vr-stat-herotrack{display:flex; transition:transform .6s cubic-bezier(.65,0,.35,1); will-change:transform;}
+.vr-stat-heroslider .vr-stat-hero{flex:0 0 100%; margin:0; border-radius:0; padding-bottom:36px;}
+.vr-stat-herodots{position:absolute; left:0; right:0; bottom:13px; display:flex; justify-content:center; gap:8px;}
+.vr-stat-herodot{
+  width:9px; height:9px; padding:0; border:none; border-radius:50%; cursor:pointer;
+  background:rgba(255,255,255,.45); transition:background .2s, transform .2s;
+}
+.vr-stat-herodot:hover{background:rgba(255,255,255,.75);}
+.vr-stat-herodot.is-on{background:#fff; transform:scale(1.25);}
+@media(prefers-reduced-motion:reduce){ .vr-stat-herotrack{transition:none;} }
+
+/* Card grid --------------------------------------------------------------- */
+.vr-stat-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:16px;}
+.vr-stat-card{
+  background:var(--vr-white); border:2px solid var(--vr-grey); border-radius:16px; padding:18px 20px;
+}
+.vr-stat-card--wide{grid-column:1 / -1;}
+.vr-stat-card__title{
+  font-family:var(--vr-font-head); font-weight:800; text-transform:uppercase; letter-spacing:.03em;
+  font-size:14px; color:var(--vr-ink); margin:0 0 14px;
+}
+.vr-stat-empty{font-family:var(--vr-font-mono); font-size:12px; color:var(--vr-grey-2); padding:6px 0;}
+
+/* Leaderboards ------------------------------------------------------------ */
+.vr-stat-board{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px;}
+.vr-stat-board__row{
+  display:flex; align-items:center; gap:12px; padding:9px 10px; border-radius:10px;
+}
+.vr-stat-board__row:nth-child(odd){background:rgba(0,0,0,.025);}
+.vr-stat-board__row.is-top{background:rgba(241,89,42,.10);}
+.vr-stat-board__pos{
+  flex:0 0 22px; text-align:center; font-family:var(--vr-font-display); font-size:16px; color:var(--vr-grey-2);
+}
+.vr-stat-board__row.is-top .vr-stat-board__pos{color:var(--vr-orange);}
+.vr-stat-board__name{
+  flex:1 1 auto; min-width:0; font-family:var(--vr-font-head); font-weight:700; font-size:14px; color:var(--vr-ink);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.vr-stat-board__sub{display:block; font-family:var(--vr-font-mono); font-weight:400; font-size:11px; color:var(--vr-grey-2); white-space:nowrap;}
+.vr-stat-board__val{
+  flex:0 0 auto; font-family:var(--vr-font-display); font-size:20px; color:var(--vr-blue-deep); line-height:1;
+}
+.vr-stat-board__val small{font-family:var(--vr-font-mono); font-size:10px; letter-spacing:.06em; color:var(--vr-grey-2); margin-left:4px; text-transform:uppercase;}
+
+/* Fastest by class -------------------------------------------------------- */
+.vr-stat-classgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px;}
+.vr-stat-classrec{
+  text-align:center; padding:14px 10px; background:var(--vr-grey); border-radius:12px;
+}
+.vr-stat-classrec__cls{
+  font-family:var(--vr-font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--vr-grey-2);
+}
+.vr-stat-classrec__time{
+  font-family:var(--vr-font-display); font-size:clamp(20px,3vw,26px); line-height:1; margin:6px 0 4px; color:var(--vr-ink);
+}
+.vr-stat-classrec__who{font-family:var(--vr-font-head); font-weight:700; font-size:13px; color:var(--vr-ink-2);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+
+/* Class titles ------------------------------------------------------------ */
+.vr-stat-titles{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px;}
+.vr-stat-titles__row{display:flex; align-items:center; gap:12px; padding:9px 10px; border-radius:10px;}
+.vr-stat-titles__row:nth-child(odd){background:rgba(0,0,0,.025);}
+.vr-stat-titles__cls{
+  flex:0 0 120px; font-family:var(--vr-font-mono); font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--vr-grey-2);
+}
+.vr-stat-titles__name{flex:1 1 auto; min-width:0; font-family:var(--vr-font-head); font-weight:800; text-transform:uppercase;
+  font-size:14px; color:var(--vr-ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.vr-stat-titles__val{flex:0 0 auto; font-family:var(--vr-font-display); font-size:18px; color:var(--vr-orange); line-height:1;}
+.vr-stat-titles__val small{font-family:var(--vr-font-mono); font-size:10px; letter-spacing:.06em; color:var(--vr-grey-2); margin-left:4px; text-transform:uppercase;}
+
+@media(max-width:640px){
+  .vr-stat-grid{grid-template-columns:1fr;}
+  .vr-stat-titles__cls{flex-basis:92px;}
+}

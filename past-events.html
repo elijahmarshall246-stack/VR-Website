@@ -12,12 +12,12 @@
   <link rel="preload" href="fonts/racing-sans-one-400.woff2" as="font" type="font/woff2" crossorigin>
 
   <link rel="stylesheet" href="css/tokens.css?v=21">
-  <link rel="stylesheet" href="css/shell.css?v=28">
-  <link rel="stylesheet" href="css/board.css?v=24">
+  <link rel="stylesheet" href="css/shell.css?v=29">
+  <link rel="stylesheet" href="css/board.css?v=25">
 
   <script defer src="config.js?v=20"></script>
   <script defer src="js/shell.js?v=20"></script>
-  <script defer src="js/previous.js?v=23"></script>
+  <script defer src="js/previous.js?v=25"></script>
   <script defer src="js/qualtabs.js?v=20"></script>
 </head>
 <body>
@@ -27,8 +27,10 @@
       <a class="vr-logo" href="https://vaucluseraceway.com" aria-label="Vaucluse Raceway — main site">
         <img src="assets/vr-logo.svg" alt="Vaucluse Raceway" width="188" height="68">
       </a>
-      <nav class="vr-nav" aria-label="Results sections">
-        <a class="vr-nav__main" href="https://vaucluseraceway.com">Home</a>
+      <nav class="vr-headnav" id="vrPagenav" aria-label="Results sections">
+        <a class="vr-pagenav__link" href="/happening-now"><span class="vr-livedot" aria-hidden="true"></span>Happening Now</a>
+        <a class="vr-pagenav__link is-active" href="/past-events" aria-current="page">Past Events</a>
+        <a class="vr-pagenav__link" href="/stats">Stats</a>
       </nav>
     </div>
   </header>
@@ -37,17 +39,14 @@
     <span></span><span></span><span></span>
   </button>
   <nav id="mobile-menu" aria-label="Mobile menu">
+    <a href="/happening-now">Happening Now</a>
+    <a class="is-active" href="/past-events" aria-current="page">Past Events</a>
+    <a href="/stats">Stats</a>
     <a href="https://vaucluseraceway.com">Home</a>
   </nav>
 
   <main class="vr-main">
     <div class="vr-container">
-
-      <nav class="vr-pagenav" id="vrPagenav" aria-label="Results sections">
-        <a class="vr-pagenav__link" href="/happening-now"><span class="vr-livedot" aria-hidden="true"></span>Happening Now</a>
-        <a class="vr-pagenav__link is-active" href="/past-events" aria-current="page">Past Events</a>
-      </nav>
-
       <section id="vrPrevList" style="display:none" aria-label="Choose an event">
         <p class="vr-archivenote">For now, only <strong>RallySprint</strong> data is available. <strong>Stage Rally</strong> and <strong>Rallycross</strong> are coming soon.</p>
         <div class="vr-filters">

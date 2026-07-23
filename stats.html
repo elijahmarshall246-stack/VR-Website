@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stats | Vaucluse Raceway</title>
+  <meta name="description" content="Vaucluse Raceway records and leaderboards — fastest times, most wins and most podiums across RallySprint and Rallycross.">
+  <link rel="canonical" href="https://results.vaucluseraceway.com/stats">
+  <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon.png?v=10">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=10">
+
+  <link rel="preload" href="fonts/racing-sans-one-400.woff2" as="font" type="font/woff2" crossorigin>
+
+  <link rel="stylesheet" href="css/tokens.css?v=21">
+  <link rel="stylesheet" href="css/shell.css?v=29">
+  <link rel="stylesheet" href="css/stats.css?v=4">
+
+  <script defer src="config.js?v=20"></script>
+  <script defer src="js/shell.js?v=20"></script>
+  <script defer src="js/results-parse.js?v=1"></script>
+  <script defer src="js/stats.js?v=6"></script>
+</head>
+<body>
+
+  <header class="vr-header">
+    <div class="vr-header__inner">
+      <a class="vr-logo" href="https://vaucluseraceway.com" aria-label="Vaucluse Raceway — main site">
+        <img src="assets/vr-logo.svg" alt="Vaucluse Raceway" width="188" height="68">
+      </a>
+      <nav class="vr-headnav" id="vrPagenav" aria-label="Results sections">
+        <a class="vr-pagenav__link" href="/happening-now"><span class="vr-livedot" aria-hidden="true"></span>Happening Now</a>
+        <a class="vr-pagenav__link" href="/past-events">Past Events</a>
+        <a class="vr-pagenav__link is-active" href="/stats" aria-current="page">Stats</a>
+      </nav>
+    </div>
+  </header>
+
+  <button id="hamburger-btn" aria-label="Open menu" aria-controls="mobile-menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+  <nav id="mobile-menu" aria-label="Mobile menu">
+    <a href="/happening-now">Happening Now</a>
+    <a href="/past-events">Past Events</a>
+    <a class="is-active" href="/stats" aria-current="page">Stats</a>
+    <a href="https://vaucluseraceway.com">Home</a>
+  </nav>
+
+  <main class="vr-main">
+    <div class="vr-container">
+
+      <div class="vr-state is-on" id="vrStatsLoading">
+        <div class="vr-spinner" aria-hidden="true"></div>
+        <div class="vr-state__title"><em>Loading stats…</em></div>
+        <div class="vr-state__msg">Reading every event to build the records.</div>
+        <div class="vr-stats__progress" id="vrStatsProgress"></div>
+      </div>
+
+      <div class="vr-state" id="vrStatsError">
+        <div class="vr-state__title">Couldn’t <em>load stats</em></div>
+        <div class="vr-state__msg">Something went wrong reaching the results sheet.</div>
+        <button class="vr-btn" type="button" id="vrStatsRetry">Try again <span class="vr-arrow">↻</span></button>
+      </div>
+
+      <div id="vrStatsContent" style="display:none">
+        <p class="vr-stats__lede">All-time records and leaderboards, built live from every published event.</p>
+        <div id="vrStatsBody"></div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer id="vrFooter"></footer>
+
+</body>
+</html>

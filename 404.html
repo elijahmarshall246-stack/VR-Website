@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>Vaucluse Raceway</title>
+  <script>
+    /* GitHub Pages serves this file for any unknown path. Deep event links like
+       /past-events/reverse-rallysprint-020526 have no matching file, so bounce
+       them into the Past Events page as a query the app restores to a clean URL. */
+    (function(){
+      var m = location.pathname.match(/^\/past-events\/([^\/?#]+)\/?$/i);
+      if (m) { location.replace('/past-events?event=' + m[1] + location.hash); }
+    })();
+  </script>
+  <style>
+    body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#fff;color:#0e2a47;text-align:center;padding:24px;}
+    .box{max-width:420px;}
+    h1{font-size:64px;margin:0;color:#F1592A;}
+    p{color:#5a6672;line-height:1.5;}
+    a{display:inline-block;margin-top:14px;color:#fff;background:#F1592A;text-decoration:none;
+      font-weight:700;padding:12px 24px;border-radius:2.5rem;}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>404</h1>
+    <p>That page couldn’t be found. If you followed an event link, hold on — we’re redirecting you.</p>
+    <a href="/">Back to results</a>
+  </div>
+</body>
+</html>

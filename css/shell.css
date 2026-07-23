@@ -18,8 +18,22 @@ a{color:inherit;}
   background:var(--vr-white); border-bottom:2px solid var(--vr-grey);
 }
 .vr-header__inner{
-  display:flex; align-items:center; gap:24px;
+  display:flex; align-items:center; gap:24px; position:relative;
   height:var(--vr-header-h); max-width:var(--vr-max); margin:0 auto; padding:0 20px;
+}
+
+/* Section nav sitting in the middle of the header (logo/home stays far left).
+   Reuses the .vr-pagenav__link button styling. Hidden on mobile — those links
+   move into the hamburger drawer instead. */
+.vr-headnav{
+  position:absolute; left:50%; transform:translateX(-50%);
+  display:flex; align-items:center; gap:10px;
+}
+/* Below this width the centered nav would collide with the logo, so hand off to
+   the hamburger drawer (shown here too, not just at the 768px logo breakpoint). */
+@media(max-width:900px){
+  .vr-headnav{display:none;}
+  #hamburger-btn{display:flex; flex-direction:column; gap:5px;}
 }
 .vr-logo{display:inline-flex; align-items:center; flex-shrink:0; line-height:0;}
 .vr-logo img{height:68px; width:auto; display:block;}

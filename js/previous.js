@@ -39,6 +39,41 @@
   var cellVal = function(c){ return c ? (c.f!=null ? String(c.f) : (c.v!=null ? String(c.v) : '')) : ''; };
   function norm(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
 
+  /* ===== Per-event URLs =====
+     Each event gets a shareable path like /past-events/reverse-rallysprint-020526
+     ( slug = title-ddmmyy ). Deep links 404 on GitHub Pages, so 404.html bounces
+     /past-events/<slug> to /past-events?event=<slug>, which we restore below. */
+  var BASE_PATH='/past-events';
+  function pad2(n){ return String(n).padStart(2,'0'); }
+  function slugify(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); }
+  function eventSlug(ev){
+    var base=slugify(ev.name);
+    if(ev && !isNaN(ev.dateMs)){ var d=new Date(ev.dateMs);
+      return base+'-'+pad2(d.getDate())+pad2(d.getMonth()+1)+pad2(d.getFullYear()%100); }
+    return base;
+  }
+  function findBySlug(slug){
+    slug=String(slug||'').toLowerCase();
+    if(!slug) return null;
+    for(var i=0;i<events.length;i++){ if(eventSlug(events[i]).toLowerCase()===slug) return events[i]; }
+    return null;
+  }
+  function requestedSlug(){
+    var m=location.pathname.match(/\/past-events\/([^\/?#]+)/i);
+    if(m) return decodeURIComponent(m[1]);
+    var q=(location.search.match(/[?&]event=([^&]+)/)||[])[1];
+    return q?decodeURIComponent(q):'';
+  }
+  function setUrl(path, replace){
+    if(location.pathname+location.search===path) return;
+    try{ history[replace?'replaceState':'pushState']({}, '', path); }catch(e){}
+  }
+  function routeFromUrl(){
+    var ev=findBySlug(requestedSlug());
+    if(ev){ selectEvent(ev, true); }
+    else { showOnly('list'); setUrl(BASE_PATH, true); }
+  }
+
   function parseTime(v){
     if(v==null||v==='') return null;
     if(typeof v==='number'&&!isNaN(v)) return Math.round(v*1000);
@@ -401,7 +436,8 @@
     showOnly('detail');
     if(pdfWrap){ if(ev.pdf){ pdfLink.href=ev.pdf; pdfWrap.style.display=''; } else pdfWrap.style.display='none'; }
   }
-  function selectEvent(ev){
+  function selectEvent(ev, replaceUrl){
+    setUrl(BASE_PATH+'/'+eventSlug(ev), replaceUrl);
     if(cache[ev.tab]){ render(cache[ev.tab]); enterDetail(ev); return; }
     showOnly('loading');
     gviz(ev.tab, FETCH_RANGE, function(rows){
@@ -410,10 +446,40 @@
     });
   }
 
+  var MONTHS={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+  // The Index "Date" column is human-written text ("2nd May, 2026"), which
+  // Date.parse chokes on because of the ordinal suffix. Parse it properly so
+  // event slugs get their -ddmmyy and the list sorts by real dates.
+  function parseDateText(s){
+    s=String(s==null?'':s).trim(); if(!s) return NaN;
+    var m=s.match(/^Date\((\d+),(\d+),(\d+)/);              // gviz typed date (month already 0-based)
+    if(m) return new Date(+m[1],+m[2],+m[3]).getTime();
+    var t=s.replace(/(\d+)(st|nd|rd|th)/gi,'$1');           // "2nd May, 2026" -> "2 May, 2026"
+    m=t.match(/(\d{1,2})[\s\/.-]+([A-Za-z]{3,})[,\s\/.-]+(\d{4})/);   // 2 May 2026 / 02/May/2026
+    if(m){ var d1=MONTHS[m[2].slice(0,3).toLowerCase()];
+      if(d1!=null) return new Date(+m[3],d1,+m[1]).getTime(); }
+    m=t.match(/([A-Za-z]{3,})[\s\/.-]+(\d{1,2})[,\s\/.-]+(\d{4})/);   // May 2, 2026
+    if(m){ var d2=MONTHS[m[1].slice(0,3).toLowerCase()];
+      if(d2!=null) return new Date(+m[3],d2,+m[2]).getTime(); }
+    m=t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);              // 2026-05-02
+    if(m) return new Date(+m[1],+m[2]-1,+m[3]).getTime();
+    m=t.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})/);  // 02/05/2026 (day first)
+    if(m){ var y=+m[3]; if(y<100) y+=2000; return new Date(y,+m[2]-1,+m[1]).getTime(); }
+    var p=Date.parse(t); return isNaN(p)?NaN:p;
+  }
   function dateMs(cell){
-    if(!cell) return NaN; var v=cell.v;
-    if(typeof v==='string'){ var m=v.match(/^Date\((\d+),(\d+),(\d+)/); if(m) return new Date(+m[1],+m[2],+m[3]).getTime(); }
-    var t=Date.parse(cell.f||(v!=null?String(v):'')); return isNaN(t)?NaN:t;
+    if(!cell) return NaN;
+    var byVal=parseDateText(cell.v);
+    return isNaN(byVal) ? parseDateText(cell.f) : byVal;
+  }
+  // Fallback: the sheet's real date column has a blank header, so it can't be
+  // found by name — pick up any cell in the row holding a typed gviz date.
+  function scanDate(cells){
+    for(var i=0;i<(cells||[]).length;i++){
+      var v=cells[i]&&cells[i].v;
+      if(typeof v==='string'&&/^Date\(\d+,\d+,\d+/.test(v)) return parseDateText(v);
+    }
+    return NaN;
   }
   function loadIndex(){
     showOnly('loading');
@@ -431,6 +497,7 @@
         var name=cellVal(c[iName]).trim(), tab=cellVal(c[iTab]).trim();
         if(!name||!tab) continue;
         var dm = iDate>=0?dateMs(c[iDate]):NaN;
+        if(isNaN(dm)) dm = scanDate(c);
         var dstr = iDate>=0?cellVal(c[iDate]).trim():'';
         var yr = !isNaN(dm) ? new Date(dm).getFullYear()
                             : (dstr.match(/\b(?:19|20)\d{2}\b/)||[null])[0];
@@ -448,11 +515,12 @@
       buildTypeFilter();
       buildYearFilter();
       renderEventList();
-      showOnly('list');
+      routeFromUrl();
     });
   }
 
-  back.addEventListener('click', function(){ showOnly('list'); });
+  back.addEventListener('click', function(){ showOnly('list'); setUrl(BASE_PATH); });
+  window.addEventListener('popstate', function(){ if(events.length) routeFromUrl(); });
   var retry=el('vrPrevRetry'); if(retry) retry.addEventListener('click', loadIndex);
   if(!configured){ showOnly('empty'); return; }
   loadIndex();

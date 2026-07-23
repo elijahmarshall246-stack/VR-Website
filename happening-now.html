@@ -12,8 +12,8 @@
   <link rel="preload" href="fonts/racing-sans-one-400.woff2" as="font" type="font/woff2" crossorigin>
 
   <link rel="stylesheet" href="css/tokens.css?v=21">
-  <link rel="stylesheet" href="css/shell.css?v=28">
-  <link rel="stylesheet" href="css/board.css?v=24">
+  <link rel="stylesheet" href="css/shell.css?v=29">
+  <link rel="stylesheet" href="css/board.css?v=25">
 
   <script defer src="config.js?v=20"></script>
   <script defer src="js/shell.js?v=20"></script>
@@ -28,8 +28,10 @@
       <a class="vr-logo" href="https://vaucluseraceway.com" aria-label="Vaucluse Raceway — main site">
         <img src="assets/vr-logo.svg" alt="Vaucluse Raceway" width="188" height="68">
       </a>
-      <nav class="vr-nav" aria-label="Results sections">
-        <a class="vr-nav__main" href="https://vaucluseraceway.com">Home</a>
+      <nav class="vr-headnav" id="vrPagenav" aria-label="Results sections">
+        <a class="vr-pagenav__link is-active" href="/happening-now" aria-current="page"><span class="vr-livedot" aria-hidden="true"></span>Happening Now</a>
+        <a class="vr-pagenav__link" href="/past-events">Past Events</a>
+        <a class="vr-pagenav__link" href="/stats">Stats</a>
       </nav>
     </div>
   </header>
@@ -38,17 +40,14 @@
     <span></span><span></span><span></span>
   </button>
   <nav id="mobile-menu" aria-label="Mobile menu">
+    <a class="is-active" href="/happening-now" aria-current="page">Happening Now</a>
+    <a href="/past-events">Past Events</a>
+    <a href="/stats">Stats</a>
     <a href="https://vaucluseraceway.com">Home</a>
   </nav>
 
   <main class="vr-main">
     <div class="vr-container">
-
-      <nav class="vr-pagenav" id="vrPagenav" aria-label="Results sections">
-        <a class="vr-pagenav__link is-active" href="/happening-now" aria-current="page"><span class="vr-livedot" aria-hidden="true"></span>Happening Now</a>
-        <a class="vr-pagenav__link" href="/past-events">Past Events</a>
-      </nav>
-
 
       <div class="vr-state is-on" id="vrLiveLoading">
         <div class="vr-spinner" aria-hidden="true"></div>
