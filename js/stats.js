@@ -1,43 +1,18 @@
 (function(){
-  var CFG  = (window.VR_CONFIG && window.VR_CONFIG.previous) || {};
-  var COLS = CFG.indexColumns || {};
-  var WB   = CFG.workbookId || '';
-  var configured = WB && !/^TODO/i.test(WB);
   var VRR  = window.VRResults;
+  var VRDS = window.VRDriverStats;
 
-  var FETCH_RANGE = 'A1:U240';
   var TOP_N = 5;            // rows shown in each leaderboard
-  var MIN_APPEAR = 2;       // min events entered to qualify for the win-rate board
 
-  // Categories to report, chosen from the dropdown. Each key must equal the
-  // normalised event type from the Index sheet. Categories with no events yet
-  // render a "coming soon" state.
-  var DISCIPLINES = [
-    { key:'rallysprint',        label:'RallySprint'         },
-    { key:'reverserallysprint', label:'Reverse RallySprint' },
-    { key:'rallycross',         label:'Rallycross'          },
-    { key:'stagerally',         label:'Stage Rally'         },
-  ];
+  // Categories to report, chosen from the dropdown. Categories with no events
+  // yet render a "coming soon" state.
+  var DISCIPLINES = (VRR && VRR.DISCIPLINES) || [];
 
   var el = function(id){ return document.getElementById(id); };
   var loading = el('vrStatsLoading'), error = el('vrStatsError'),
       content = el('vrStatsContent'), body = el('vrStatsBody'), progress = el('vrStatsProgress');
 
-  var _seq = 0;
-  function gviz(tab, range, cb){
-    var base='https://docs.google.com/spreadsheets/d/'+WB+'/gviz/tq?sheet='+encodeURIComponent(tab)+
-             (range?'&range='+range:'')+'&headers=0';
-    var cbName='__vrStats'+(++_seq);
-    var s=document.createElement('script');
-    window[cbName]=function(resp){ delete window[cbName]; s.remove();
-      cb(resp&&resp.status==='ok'?((resp.table&&resp.table.rows)||[]):null); };
-    s.onerror=function(){ delete window[cbName]; s.remove(); cb(null); };
-    s.src=base+'&tqx=out:json;responseHandler:'+cbName;
-    document.head.appendChild(s);
-  }
-
   function esc(s){ return String(s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
-  function yearOf(dateStr){ var m=String(dateStr||'').match(/\b(?:19|20)\d{2}\b/); return m?+m[0]:null; }
 
   // Only these classes are shown; historical/misspelled labels are aliased in,
   // and anything not listed is excluded from the class stats entirely.
@@ -58,7 +33,7 @@
   function slotName(slot){
     if(!slot) return '';
     var label=slot.driver||slot.car||'';
-    if(!label || /^(bye|tbd|\?|—|-)$/i.test(label.trim())) return '';
+    if(!label || /^(bye|tbd|\?|—|-)$/i.test(label.trim()) || VRR.isErrText(label)) return '';
     return label;
   }
 
@@ -68,63 +43,25 @@
     content.style.display = which==='content' ? '' : 'none';
   }
 
-  // ---- Index ----------------------------------------------------------------
-  function loadIndex(cb){
-    gviz(CFG.indexTabName||'Index', '', function(rows){
-      if(rows===null){ cb(null); return; }
-      var header=(rows[0].c||[]).map(function(c){ return VRR.norm(VRR.cellVal(c)); });
-      var idx=function(n){ return header.indexOf(VRR.norm(n)); };
-      var iName=idx(COLS.eventName||'EventName'), iType=idx(COLS.eventType||'EventType'),
-          iDate=idx(COLS.date||'Date'), iTab=idx(COLS.tabName||'TabName');
-      if(iName<0||iTab<0){ cb(null); return; }
-      var events=[];
-      for(var r=1;r<rows.length;r++){
-        var c=rows[r].c||[];
-        var name=VRR.cellVal(c[iName]).trim(), tab=VRR.cellVal(c[iTab]).trim();
-        if(!name||!tab) continue;
-        var date=iDate>=0?VRR.cellVal(c[iDate]).trim():'';
-        events.push({ name:name, tab:tab,
-          type: iType>=0?VRR.cellVal(c[iType]).trim():'',
-          date: date, year: yearOf(date) });
-      }
-      cb(events);
-    });
-  }
-
-  function fetchAll(events, done){
-    var total=events.length, got=0;
-    if(!total){ done(); return; }
-    if(progress) progress.textContent='0 / '+total;
-    events.forEach(function(ev){
-      gviz(ev.tab, FETCH_RANGE, function(rows){
-        ev.parsed = rows ? VRR.parseEvent(VRR.buildGrid(rows)) : { overall:[], knockouts:[] };
-        got++; if(progress) progress.textContent=got+' / '+total;
-        if(got===total) done();
-      });
-    });
-  }
-
   // ---- Aggregation ----------------------------------------------------------
   function computeStats(evs){
-    var names={};                               // norm -> display name
-    function nm(d){ var k=VRR.norm(d); if(k && !names[k]) names[k]=d; return k; }
+    var names={};                               // driver key -> display name
+    function nm(d){ var k=VRR.driverKey(d); if(k) names[k]=VRR.betterName(names[k], d); return k; }
 
     var fastest=null, fastestByClass={};
-    var wins={}, podiums={}, appearances={}, classTitles={}, years={};
+    var wins={}, podiums={}, classTitles={}, years={};
 
     evs.forEach(function(ev){
       var P = ev.parsed || {};
       if(ev.year) years[ev.year]=1;
 
-      var seen={};
       (P.overall||[]).forEach(function(d){
         if(!d.driver) return;
-        var k=nm(d.driver);
-        if(k && !seen[k]){ seen[k]=1; appearances[k]=(appearances[k]||0)+1; }
+        var k=nm(d.driver);                       // registers the best spelling
         if(d.ms!=null){
           var canon=canonClass(d['class']);
-          if(!fastest || d.ms<fastest.ms) fastest={ms:d.ms,driver:d.driver,event:ev.name,date:ev.date,cls:canon};
-          if(canon && (!fastestByClass[canon] || d.ms<fastestByClass[canon].ms)) fastestByClass[canon]={ms:d.ms,driver:d.driver,event:ev.name,date:ev.date};
+          if(!fastest || d.ms<fastest.ms) fastest={ms:d.ms,key:k,driver:d.driver,event:ev.name,date:ev.date,cls:canon};
+          if(canon && (!fastestByClass[canon] || d.ms<fastestByClass[canon].ms)) fastestByClass[canon]={ms:d.ms,key:k,driver:d.driver,event:ev.name,date:ev.date};
         }
       });
 
@@ -146,10 +83,17 @@
         .sort(function(a,b){ return b.count-a.count || a.name.localeCompare(b.name); });
     }
     var winBoard=board(wins);
-    var winRate=Object.keys(appearances).filter(function(k){ return appearances[k]>=MIN_APPEAR; })
-      .map(function(k){ return {key:k, name:names[k], apps:appearances[k], wins:wins[k]||0, rate:(wins[k]||0)/appearances[k]}; })
-      .sort(function(a,b){ return b.rate-a.rate || b.wins-a.wins || a.name.localeCompare(b.name); });
-    var appBoard=Object.keys(appearances).map(function(k){ return {key:k, name:names[k], count:appearances[k]}; })
+
+    // Records were captured with whatever spelling that event used — show the
+    // merged driver's preferred name instead.
+    function resolve(rec){ if(rec && rec.key && names[rec.key]) rec.driver=names[rec.key]; }
+    resolve(fastest);
+    Object.keys(fastestByClass).forEach(function(cn){ resolve(fastestByClass[cn]); });
+
+    // Per-driver histories double as the appearance counts, so "Most Active"
+    // and the Driver Stats card can never disagree.
+    var drivers=VRDS.build(evs);
+    var appBoard=drivers.map(function(d){ return {key:d.key, name:d.name, count:d.count}; })
       .sort(function(a,b){ return b.count-a.count || a.name.localeCompare(b.name); });
 
     var classTitleTop={};
@@ -159,15 +103,15 @@
 
     return {
       events: evs.length,
-      drivers: Object.keys(appearances).length,
+      drivers: drivers.length,
       seasons: Object.keys(years).length,
       fastest: fastest,
       fastestByClass: fastestByClass,
       wins: winBoard,
       podiums: board(podiums),
       appearances: appBoard,
-      winRate: winRate,
       classTitles: classTitleTop,
+      driverStats: drivers,
     };
   }
 
@@ -179,17 +123,6 @@
         '<span class="vr-stat-board__pos">'+(i+1)+'</span>'+
         '<span class="vr-stat-board__name">'+esc(r.name)+'</span>'+
         '<span class="vr-stat-board__val">'+r.count+'<small>'+unit+'</small></span>'+
-      '</li>';
-    }).join('')+'</ol>';
-  }
-  function rateBoard(rows){
-    if(!rows.length) return '<div class="vr-stat-empty">No data yet.</div>';
-    return '<ol class="vr-stat-board">'+rows.slice(0,TOP_N).map(function(r,i){
-      return '<li class="vr-stat-board__row'+(i===0?' is-top':'')+'">'+
-        '<span class="vr-stat-board__pos">'+(i+1)+'</span>'+
-        '<span class="vr-stat-board__name">'+esc(r.name)+
-          '<small class="vr-stat-board__sub">'+r.wins+'W / '+r.apps+' events</small></span>'+
-        '<span class="vr-stat-board__val">'+Math.round(r.rate*100)+'<small>%</small></span>'+
       '</li>';
     }).join('')+'</ol>';
   }
@@ -250,13 +183,22 @@
         }).join('')+'</ul>'
       : '<div class="vr-stat-empty">No titles yet.</div>';
 
+    // Driver Stats: top few by events entered for this category, expandable.
+    // /stats/driver-stats lists every driver across every category.
+    var ds=S.driverStats||[];
+    var driverInner=VRDS.render(ds, {limit:TOP_N})+
+      (ds.length
+        ? '<a class="vr-dstat-all" href="/stats/drivers">'+
+            'See all drivers <span aria-hidden="true">→</span></a>'
+        : '');
+
     var grid='<div class="vr-stat-grid">'+
       card('Fastest Time by Class', byClass, true)+
       card('Most Wins', leaderboard(S.wins,'wins'))+
       card('Most Podiums', leaderboard(S.podiums,'pod'))+
-      card('Best Win Rate', rateBoard(S.winRate))+
       card('Most Active', leaderboard(S.appearances,'events'))+
-      card('Class Titles', titles, true)+
+      card('Class Titles', titles)+
+      card('Driver Stats', driverInner, true)+
     '</div>';
 
     return '<section class="vr-stat-disc">'+totals+hero+grid+'</section>';
@@ -281,6 +223,7 @@
     }).join('');
 
     body.innerHTML=picker+panels;
+    VRDS.wire(body);
 
     var sel=el('vrStatDisc');
     sel.addEventListener('change', function(){
@@ -292,21 +235,21 @@
 
   function run(){
     showOnly('loading');
-    loadIndex(function(events){
+    VRR.loadEvents({ onProgress:function(done,total){
+      if(progress) progress.textContent=done+' / '+total;
+    }}, function(events){
       if(events===null){ showOnly('error'); return; }
-      fetchAll(events, function(){
-        var stats={};
-        DISCIPLINES.forEach(function(disc){
-          var evs=events.filter(function(e){ return VRR.norm(e.type)===disc.key; });
-          stats[disc.key] = evs.length ? computeStats(evs) : null;
-        });
-        renderPage(stats);
-        showOnly('content');
+      var stats={};
+      DISCIPLINES.forEach(function(disc){
+        var evs=events.filter(function(e){ return VRR.norm(e.type)===disc.key; });
+        stats[disc.key] = evs.length ? computeStats(evs) : null;
       });
+      renderPage(stats);
+      showOnly('content');
     });
   }
 
   var retry=el('vrStatsRetry'); if(retry) retry.addEventListener('click', run);
-  if(!configured || !VRR){ showOnly('error'); return; }
+  if(!VRR || !VRDS){ showOnly('error'); return; }
   run();
 })();

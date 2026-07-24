@@ -80,6 +80,11 @@
 .vr-stat-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:16px;}
 .vr-stat-card{
   background:var(--vr-white); border:2px solid var(--vr-grey); border-radius:16px; padding:18px 20px;
+  /* Let a card shrink below its content's intrinsic min-width. Without this the
+     class card's minmax(140px,…) grid sets a ~290px min-content floor that the
+     single-column .vr-stat-grid passes on to EVERY card, overflowing narrow
+     phones (then clipped by body{overflow-x:hidden}). */
+  min-width:0;
 }
 .vr-stat-card--wide{grid-column:1 / -1;}
 .vr-stat-card__title{
@@ -110,7 +115,7 @@
 .vr-stat-board__val small{font-family:var(--vr-font-mono); font-size:10px; letter-spacing:.06em; color:var(--vr-grey-2); margin-left:4px; text-transform:uppercase;}
 
 /* Fastest by class -------------------------------------------------------- */
-.vr-stat-classgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px;}
+.vr-stat-classgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px;}
 .vr-stat-classrec{
   text-align:center; padding:14px 10px; background:var(--vr-grey); border-radius:12px;
 }
@@ -135,7 +140,128 @@
 .vr-stat-titles__val{flex:0 0 auto; font-family:var(--vr-font-display); font-size:18px; color:var(--vr-orange); line-height:1;}
 .vr-stat-titles__val small{font-family:var(--vr-font-mono); font-size:10px; letter-spacing:.06em; color:var(--vr-grey-2); margin-left:4px; text-transform:uppercase;}
 
+/* Driver stats ------------------------------------------------------------
+   Expandable per-driver rows: summary line, then their metrics and every event
+   they entered with a link through to that event's results. Used both in the
+   Stats page card and on the full /stats/driver-stats page. */
+.vr-dstat-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px;}
+.vr-dstat{border:2px solid var(--vr-grey); border-radius:14px; overflow:hidden; background:var(--vr-white);}
+.vr-dstat.is-open{border-color:var(--vr-orange);}
+
+.vr-dstat__head{
+  width:100%; display:flex; align-items:center; gap:12px; padding:11px 14px;
+  background:none; border:0; cursor:pointer; text-align:left; font:inherit; color:inherit;
+}
+.vr-dstat__head:hover{background:rgba(241,89,42,.06);}
+.vr-dstat__head:focus-visible{outline:2px solid var(--vr-blue-deep); outline-offset:-2px;}
+.vr-dstat__pos{
+  flex:0 0 auto; min-width:22px; text-align:center; font-family:var(--vr-font-display); font-size:16px; color:var(--vr-grey-2);
+}
+.vr-dstat.is-open .vr-dstat__pos{color:var(--vr-orange);}
+.vr-dstat__id{flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:3px;}
+.vr-dstat__name{
+  font-family:var(--vr-font-head); font-weight:800; text-transform:uppercase; letter-spacing:.02em;
+  font-size:14px; color:var(--vr-ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.vr-dstat__sub{font-family:var(--vr-font-mono); font-size:11px; letter-spacing:.04em; color:var(--vr-grey-2);}
+.vr-dstat__chev{
+  flex:0 0 auto; font-size:14px; line-height:1; color:var(--vr-grey-2); transition:transform .2s;
+}
+.vr-dstat.is-open .vr-dstat__chev{transform:rotate(180deg); color:var(--vr-orange);}
+
+.vr-dstat__body{padding:0 14px 14px; border-top:2px solid var(--vr-grey);}
+.vr-dstat__metrics{display:flex; flex-wrap:wrap; gap:10px; margin:14px 0;}
+.vr-dstat__metric{
+  flex:1 1 90px; text-align:center; padding:10px 8px; background:var(--vr-grey); border-radius:10px; min-width:0;
+}
+.vr-dstat__metric--wide{flex:2 1 190px;}
+.vr-dstat__mnum{
+  display:block; font-family:var(--vr-font-display); font-size:22px; line-height:1; color:var(--vr-blue-deep);
+}
+.vr-dstat__mlbl{
+  display:block; margin-top:5px; font-family:var(--vr-font-mono); font-size:10px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--vr-grey-2);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+
+.vr-dstat__events{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px;}
+.vr-dstat-ev{
+  display:flex; align-items:center; gap:12px; padding:9px 11px;
+  background:rgba(0,0,0,.025); border-radius:10px;
+}
+.vr-dstat-ev__main{flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:3px;}
+.vr-dstat-ev__name{
+  font-family:var(--vr-font-head); font-weight:700; font-size:13px; color:var(--vr-ink);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.vr-dstat-ev__meta{font-family:var(--vr-font-mono); font-size:11px; color:var(--vr-grey-2);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.vr-dstat-ev__res{flex:0 0 auto; display:flex; align-items:center; gap:8px;}
+.vr-dstat-ev__badge{
+  padding:3px 9px; border-radius:2rem; background:var(--vr-grey); color:var(--vr-ink-2);
+  font-family:var(--vr-font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+}
+.vr-dstat-ev__badge.is-r5{background:var(--vr-orange); color:#fff;}
+.vr-dstat-ev__badge.is-r4{background:var(--vr-blue-deep); color:#fff;}
+.vr-dstat-ev__qual{font-family:var(--vr-font-mono); font-size:11px; color:var(--vr-grey-2); white-space:nowrap;}
+.vr-dstat-ev__btn{
+  flex:0 0 auto; padding:7px 13px; border-radius:2rem; border:2px solid var(--vr-grey);
+  font-family:var(--vr-font-mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--vr-blue-deep); text-decoration:none; white-space:nowrap; transition:border-color .15s, color .15s;
+}
+.vr-dstat-ev__btn:hover{border-color:var(--vr-orange); color:var(--vr-orange);}
+
+.vr-dstat-all{
+  display:block; margin-top:12px; padding-top:12px; border-top:2px solid var(--vr-grey);
+  text-align:center; text-decoration:none;
+  font-family:var(--vr-font-mono); font-size:12px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--vr-orange); font-weight:700;
+}
+.vr-dstat-all:hover{text-decoration:underline;}
+
+/* Full driver-stats page --------------------------------------------------- */
+.vr-dstat-page__title{
+  font-family:var(--vr-font-display); font-size:clamp(30px,6vw,48px); line-height:1;
+  text-align:center; margin:0 0 12px; color:var(--vr-ink);
+}
+.vr-dstat-page__title em{font-style:italic; color:var(--vr-orange);}
+.vr-dstat-page__controls{
+  display:flex; flex-wrap:wrap; gap:14px; max-width:700px; margin:0 auto 16px;
+}
+.vr-dstat-page__controls input[type="search"]{
+  width:100%; padding:11px 14px; border:2px solid var(--vr-grey); border-radius:10px;
+  background:var(--vr-white); color:var(--vr-ink); font-family:var(--vr-font-body,inherit); font-size:14px;
+}
+.vr-dstat-page__controls input[type="search"]:hover{border-color:var(--vr-orange);}
+.vr-dstat-page__controls input[type="search"]:focus{outline:none; border-color:var(--vr-blue-deep);}
+.vr-dstat-page__count{
+  max-width:700px; margin:0 auto 12px; text-align:center;
+  font-family:var(--vr-font-mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--vr-grey-2);
+}
+#vrDsList{max-width:700px; margin:0 auto;}
+#vrDsNoMatch{max-width:700px; margin:0 auto; text-align:center;}
+
 @media(max-width:640px){
   .vr-stat-grid{grid-template-columns:1fr;}
   .vr-stat-titles__cls{flex-basis:92px;}
+  .vr-dstat-ev{flex-wrap:wrap; gap:8px;}
+  .vr-dstat-ev__main{flex:1 1 100%;}
+  .vr-dstat-ev__res{flex:1 1 auto;}
+  .vr-dstat-ev__btn{margin-left:auto;}
+}
+
+/* Board pages go edge-to-edge, so shell.css zeroes .vr-container padding at
+   ≤560px. The stats page isn't a board — restore side gutters so the cards
+   don't hit (and get clipped at) the screen edge, and tighten the card and
+   class-record padding so two class boxes still fit across a phone. */
+@media(max-width:560px){
+  .vr-container{padding:0 14px;}
+  .vr-stat-card{padding:16px 14px;}
+  /* Fixed 2-up columns (no 140px min) always divide the card width and can't
+     force the card wider than the screen; the time scales down so it never
+     spills its box. */
+  .vr-stat-classgrid{grid-template-columns:1fr 1fr; gap:10px;}
+  .vr-stat-classrec{padding:12px 6px; min-width:0;}
+  .vr-stat-classrec__time{font-size:clamp(16px,4.4vw,22px);}
+  .vr-stat-classrec__cls{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 }

@@ -36,7 +36,13 @@
   var classMap = {}, classList = [], carNames = {};
 
   function esc(s){ return String(s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
-  var cellVal = function(c){ return c ? (c.f!=null ? String(c.f) : (c.v!=null ? String(c.v) : '')) : ''; };
+  // Spreadsheet error values leak out of the sheet as ordinary text; read them
+  // as blank so #REF! / #N/A never render as a driver, class or event.
+  var ERR_RE = /^#(ref|n\/?a|name|value|div\/0|null|num|spill|getting_data)[!?]?$/i;
+  var cellVal = function(c){
+    var v = c ? (c.f!=null ? String(c.f) : (c.v!=null ? String(c.v) : '')) : '';
+    return ERR_RE.test(v.trim()) ? '' : v;
+  };
   function norm(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
 
   /* ===== Per-event URLs =====

@@ -1,4 +1,9 @@
 (function(){
+  /* Spreadsheet error values leak out of the sheet as ordinary text; read them
+     as blank so #REF! / #N/A never render on the board. */
+  const VR_ERR_RE = /^#(ref|n\/?a|name|value|div\/0|null|num|spill|getting_data)[!?]?$/i;
+  const noErr = v => VR_ERR_RE.test(String(v==null?'':v).trim()) ? '' : v;
+
   /* =================================================================
      CONFIG
      ================================================================= */
@@ -267,7 +272,7 @@
         el('lbErr').textContent='Sheet error: '+msg+' — ensure sheet is shared ("Anyone with link") and published to the web (File > Share > Publish to web).'; hideLoading(); markUpdated(false,false); return;
       }
       const rows=resp.table.rows||[];
-      const getVal=(r,c)=>{ if(c==null) return ''; const cell=rows[r]&&rows[r].c&&rows[r].c[c]; if(!cell) return ''; return cell.f!=null?cell.f:(cell.v!=null?String(cell.v):''); };
+      const getVal=(r,c)=>{ if(c==null) return ''; const cell=rows[r]&&rows[r].c&&rows[r].c[c]; if(!cell) return ''; return noErr(cell.f!=null?cell.f:(cell.v!=null?String(cell.v):'')); };
       const runs=h.runLabels.map(l=>({label:l, heats:[]}));
       let curHeat=''; const rowsByHeat={};
       for(let r=0;r<rows.length;r++){
@@ -303,7 +308,7 @@
     script.src=base+'&tqx=out:json;responseHandler:'+cbName;
     document.head.appendChild(script);
   }
-  const cellVal=c=>c?(c.f!=null?c.f:(c.v!=null?String(c.v):'')):'';
+  const cellVal=c=>noErr(c?(c.f!=null?c.f:(c.v!=null?String(c.v):'')):'');
 
 
   function loadLiveStatus(){
@@ -465,7 +470,7 @@
       if(!ref) return ''; const p=cellToIndex(ref); if(!p) return '';
       const r=p.row-originRow, c=p.col-originCol; if(r<0||c<0) return '';
       const row=fetchedRows[r]; if(!row||!row.c||row.c[c]==null) return '';
-      const cell=row.c[c]; return String(cell.f!=null?cell.f:(cell.v!=null?cell.v:'')).trim();
+      const cell=row.c[c]; return noErr(String(cell.f!=null?cell.f:(cell.v!=null?cell.v:'')).trim());
     }
     function colShift(ref,n){ const p=cellToIndex(ref); if(!p) return ''; return colLetter(p.col+n)+(p.row+1); }
 

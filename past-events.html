@@ -12,12 +12,12 @@
   <link rel="preload" href="fonts/racing-sans-one-400.woff2" as="font" type="font/woff2" crossorigin>
 
   <link rel="stylesheet" href="css/tokens.css?v=21">
-  <link rel="stylesheet" href="css/shell.css?v=29">
+  <link rel="stylesheet" href="css/shell.css?v=31">
   <link rel="stylesheet" href="css/board.css?v=25">
 
   <script defer src="config.js?v=20"></script>
-  <script defer src="js/shell.js?v=20"></script>
-  <script defer src="js/previous.js?v=25"></script>
+  <script defer src="js/shell.js?v=21"></script>
+  <script defer src="js/previous.js?v=26"></script>
   <script defer src="js/qualtabs.js?v=20"></script>
 </head>
 <body>
@@ -30,7 +30,13 @@
       <nav class="vr-headnav" id="vrPagenav" aria-label="Results sections">
         <a class="vr-pagenav__link" href="/happening-now"><span class="vr-livedot" aria-hidden="true"></span>Happening Now</a>
         <a class="vr-pagenav__link is-active" href="/past-events" aria-current="page">Past Events</a>
-        <a class="vr-pagenav__link" href="/stats">Stats</a>
+        <div class="vr-navdrop" data-navdrop>
+          <button type="button" class="vr-pagenav__link vr-navdrop__trigger" aria-haspopup="true" aria-expanded="false">Stats <span class="vr-navdrop__caret" aria-hidden="true">▾</span></button>
+          <div class="vr-navdrop__menu" role="menu">
+            <a class="vr-navdrop__item" href="/stats" role="menuitem">Stats</a>
+            <a class="vr-navdrop__item" href="/stats/drivers" role="menuitem">Drivers</a>
+          </div>
+        </div>
       </nav>
     </div>
   </header>
@@ -42,6 +48,7 @@
     <a href="/happening-now">Happening Now</a>
     <a class="is-active" href="/past-events" aria-current="page">Past Events</a>
     <a href="/stats">Stats</a>
+    <a class="vr-mobile-sub" href="/stats/drivers">Drivers</a>
     <a href="https://vaucluseraceway.com">Home</a>
   </nav>
 

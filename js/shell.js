@@ -66,6 +66,25 @@
     setInterval(poll, 30000);
   })();
 
+  // Section-nav dropdowns (Stats → Stats / Drivers). Hover handles pointer users
+  // via CSS; this adds click-toggle for touch and Escape-to-close for keyboards.
+  Array.prototype.forEach.call(document.querySelectorAll('[data-navdrop]'), function(drop){
+    var trigger = drop.querySelector('.vr-navdrop__trigger');
+    if (!trigger) return;
+    function close(){ drop.classList.remove('is-open'); trigger.setAttribute('aria-expanded','false'); }
+    trigger.addEventListener('click', function(e){
+      e.preventDefault();
+      var open = drop.classList.toggle('is-open');
+      trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    drop.addEventListener('keydown', function(e){
+      if (e.key === 'Escape'){ close(); trigger.focus(); }
+    });
+    document.addEventListener('click', function(e){
+      if (!drop.contains(e.target)) close();
+    });
+  });
+
   var btn  = document.getElementById('hamburger-btn');
   var menu = document.getElementById('mobile-menu');
   if (!btn || !menu) return;

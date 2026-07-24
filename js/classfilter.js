@@ -35,7 +35,12 @@
     s.src = base + '&tqx=out:json;responseHandler:' + cbName;
     document.head.appendChild(s);
   }
-  var cellVal = function(c){ return c ? (c.f != null ? c.f : (c.v != null ? String(c.v) : '')) : ''; };
+  // Spreadsheet error values read as blank, so #REF! / #N/A never become a class.
+  var ERR_RE = /^#(ref|n\/?a|name|value|div\/0|null|num|spill|getting_data)[!?]?$/i;
+  var cellVal = function(c){
+    var v = c ? (c.f != null ? c.f : (c.v != null ? String(c.v) : '')) : '';
+    return ERR_RE.test(String(v).trim()) ? '' : v;
+  };
 
   function buildChips(classes){
     var html = '<span class="vr-filterlabel">Filter:</span>';

@@ -20,8 +20,48 @@ window.VRResults = (function(){
   var KO_NAMES = ['BimmaCup','BimmaCup Jr.','Touring','AWD'];
   var SENTINEL = 30*60000;
 
-  function cellVal(c){ return c ? (c.f!=null ? String(c.f) : (c.v!=null ? String(c.v) : '')) : ''; }
+  // Spreadsheet error values (#REF!, #N/A, …) leak out of the sheet as ordinary
+  // text and would otherwise show up as drivers, classes and event names.
+  // Read them as blank everywhere. Car numbers like "#12" are left alone.
+  var ERR_RE=/^#(ref|n\/?a|name|value|div\/0|null|num|spill|getting_data)[!?]?$/i;
+  function isErrText(s){ return ERR_RE.test(String(s==null?'':s).trim()); }
+
+  function cellVal(c){
+    var v = c ? (c.f!=null ? String(c.f) : (c.v!=null ? String(c.v) : '')) : '';
+    return isErrText(v) ? '' : v;
+  }
   function norm(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
+
+  /* ===== Driver identity =====================================================
+     The sheets carry the same competitor under more than one spelling — a stray
+     leading or middle initial ("M Jason Downey" vs "Jason Downey", "G Allan
+     Kinch" vs "Allan Kinch") would otherwise split one driver into two on every
+     leaderboard. Key drivers on their name minus single-letter tokens, but only
+     while a first + last name survives, so a genuine "J Downey" is never
+     collapsed into a different Downey. */
+  function nameTokens(name){
+    return String(name||'').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+  }
+  function coreTokens(name){
+    var t=nameTokens(name);
+    if(t.length<3) return t;
+    var kept=t.filter(function(x){ return x.length>1; });
+    return kept.length>=2 ? kept : t;
+  }
+  function driverKey(name){ return isErrText(name) ? '' : coreTokens(name).join(''); }
+
+  // Which spelling to show for a merged driver: the one carrying no stray
+  // initials, then the one that isn't shouting, then whichever we saw first.
+  function betterName(cur, next){
+    if(!cur) return next;
+    if(!next) return cur;
+    var dc=nameTokens(cur).length-coreTokens(cur).length,
+        dn=nameTokens(next).length-coreTokens(next).length;
+    if(dn!==dc) return dn<dc ? next : cur;
+    var lcCur=/[a-z]/.test(cur), lcNext=/[a-z]/.test(next);
+    if(lcNext&&!lcCur) return next;
+    return cur;
+  }
 
   function parseTime(v){
     if(v==null||v==='') return null;
@@ -153,6 +193,132 @@ window.VRResults = (function(){
     return { overall: overall, knockouts: knockouts, classList: classList };
   }
 
+  /* ===== Event index loading =================================================
+     Reads the Index tab, then every event tab, and hands back fully parsed
+     events. Shared by the stats pages so they agree on dates, slugs and
+     parsing. (js/previous.js keeps its own copy — it predates this module and
+     is left untouched.) */
+  var FETCH_RANGE = 'A1:U240';
+  var _seq = 0;
+
+  function gviz(wb, tab, range, cb){
+    var base='https://docs.google.com/spreadsheets/d/'+wb+'/gviz/tq?sheet='+encodeURIComponent(tab)+
+             (range?'&range='+range:'')+'&headers=0';
+    var cbName='__vrRes'+(++_seq);
+    var s=document.createElement('script');
+    window[cbName]=function(resp){ delete window[cbName]; s.remove();
+      cb(resp&&resp.status==='ok'?((resp.table&&resp.table.rows)||[]):null); };
+    s.onerror=function(){ delete window[cbName]; s.remove(); cb(null); };
+    s.src=base+'&tqx=out:json;responseHandler:'+cbName;
+    document.head.appendChild(s);
+  }
+
+  var MONTHS={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+  // The Index "Date" column is human-written text ("2nd May, 2026"), which
+  // Date.parse chokes on because of the ordinal suffix.
+  function parseDateText(s){
+    s=String(s==null?'':s).trim(); if(!s) return NaN;
+    var m=s.match(/^Date\((\d+),(\d+),(\d+)/);              // gviz typed date (month already 0-based)
+    if(m) return new Date(+m[1],+m[2],+m[3]).getTime();
+    var t=s.replace(/(\d+)(st|nd|rd|th)/gi,'$1');           // "2nd May, 2026" -> "2 May, 2026"
+    m=t.match(/(\d{1,2})[\s\/.-]+([A-Za-z]{3,})[,\s\/.-]+(\d{4})/);
+    if(m){ var d1=MONTHS[m[2].slice(0,3).toLowerCase()];
+      if(d1!=null) return new Date(+m[3],d1,+m[1]).getTime(); }
+    m=t.match(/([A-Za-z]{3,})[\s\/.-]+(\d{1,2})[,\s\/.-]+(\d{4})/);
+    if(m){ var d2=MONTHS[m[1].slice(0,3).toLowerCase()];
+      if(d2!=null) return new Date(+m[3],d2,+m[2]).getTime(); }
+    m=t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if(m) return new Date(+m[1],+m[2]-1,+m[3]).getTime();
+    m=t.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})/);  // day first
+    if(m){ var y=+m[3]; if(y<100) y+=2000; return new Date(y,+m[2]-1,+m[1]).getTime(); }
+    var p=Date.parse(t); return isNaN(p)?NaN:p;
+  }
+  function dateMsOf(cell){
+    if(!cell) return NaN;
+    var byVal=parseDateText(cell.v);
+    return isNaN(byVal) ? parseDateText(cell.f) : byVal;
+  }
+  // Fallback: the sheet's real date column has a blank header, so it can't be
+  // found by name — pick up any cell in the row holding a typed gviz date.
+  function scanDate(cells){
+    for(var i=0;i<(cells||[]).length;i++){
+      var v=cells[i]&&cells[i].v;
+      if(typeof v==='string'&&/^Date\(\d+,\d+,\d+/.test(v)) return parseDateText(v);
+    }
+    return NaN;
+  }
+
+  function pad2(n){ return String(n).padStart(2,'0'); }
+  function slugify(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); }
+  // Must match js/previous.js exactly — these slugs are the /past-events links.
+  function eventSlug(ev){
+    var base=slugify(ev.name);
+    if(ev && !isNaN(ev.dateMs)){ var d=new Date(ev.dateMs);
+      return base+'-'+pad2(d.getDate())+pad2(d.getMonth()+1)+pad2(d.getFullYear()%100); }
+    return base;
+  }
+
+  // Event types reported by the stats pages. Each key must equal the normalised
+  // EventType from the Index sheet.
+  var DISCIPLINES = [
+    { key:'rallysprint',        label:'RallySprint'         },
+    { key:'reverserallysprint', label:'Reverse RallySprint' },
+    { key:'rallycross',         label:'Rallycross'          },
+    { key:'stagerally',         label:'Stage Rally'         },
+  ];
+
+  // loadEvents({onProgress:fn(done,total)}, cb) -> cb(events|null)
+  // Each event: {name, tab, type, date, dateMs, year, slug, parsed}
+  function loadEvents(opts, cb){
+    opts=opts||{};
+    var CFG=(window.VR_CONFIG&&window.VR_CONFIG.previous)||{};
+    var COLS=CFG.indexColumns||{}, WB=CFG.workbookId||'';
+    if(!WB||/^TODO/i.test(WB)){ cb(null); return; }
+
+    gviz(WB, CFG.indexTabName||'Index', '', function(rows){
+      if(rows===null||!rows.length){ cb(rows===null?null:[]); return; }
+      var header=(rows[0].c||[]).map(function(c){ return norm(cellVal(c)); });
+      var idx=function(n){ return header.indexOf(norm(n)); };
+      var iName=idx(COLS.eventName||'EventName'), iType=idx(COLS.eventType||'EventType'),
+          iDate=idx(COLS.date||'Date'), iTab=idx(COLS.tabName||'TabName');
+      if(iName<0||iTab<0){ cb(null); return; }
+
+      var events=[];
+      for(var r=1;r<rows.length;r++){
+        var c=rows[r].c||[];
+        var name=cellVal(c[iName]).trim(), tab=cellVal(c[iTab]).trim();
+        if(!name||!tab) continue;
+        var dm = iDate>=0?dateMsOf(c[iDate]):NaN;
+        if(isNaN(dm)) dm = scanDate(c);
+        var dstr = iDate>=0?cellVal(c[iDate]).trim():'';
+        var yr = !isNaN(dm) ? new Date(dm).getFullYear()
+                            : (dstr.match(/\b(?:19|20)\d{2}\b/)||[null])[0];
+        if(yr!=null) yr=+yr;
+        var ev={ name:name, tab:tab,
+          type: iType>=0?cellVal(c[iType]).trim():'',
+          date: dstr, dateMs: dm, year: yr };
+        ev.slug=eventSlug(ev);
+        events.push(ev);
+      }
+      events.sort(function(a,b){
+        if(isNaN(a.dateMs)&&isNaN(b.dateMs)) return 0;
+        if(isNaN(a.dateMs)) return 1; if(isNaN(b.dateMs)) return -1;
+        return b.dateMs-a.dateMs;
+      });
+
+      var total=events.length, got=0;
+      if(!total){ cb(events); return; }
+      if(opts.onProgress) opts.onProgress(0,total);
+      events.forEach(function(ev){
+        gviz(WB, ev.tab, FETCH_RANGE, function(tabRows){
+          ev.parsed = tabRows ? parseEvent(buildGrid(tabRows)) : { overall:[], knockouts:[] };
+          got++; if(opts.onProgress) opts.onProgress(got,total);
+          if(got===total) cb(events);
+        });
+      });
+    });
+  }
+
   // Winner + runner-up (top 2) of a knockout final, or null if undecided.
   function finalResult(ko){
     var fm = ko.rounds && ko.rounds['F'];
@@ -172,5 +338,11 @@ window.VRResults = (function(){
     fmtTime: fmtTime,
     cellVal: cellVal,
     norm: norm,
+    isErrText: isErrText,
+    driverKey: driverKey,
+    betterName: betterName,
+    loadEvents: loadEvents,
+    eventSlug: eventSlug,
+    DISCIPLINES: DISCIPLINES,
   };
 })();
