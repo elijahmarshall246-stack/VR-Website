@@ -1,0 +1,12 @@
+@keyframes er-spin { to { transform: rotate(360deg); } }
+@keyframes er-pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+.er-spin { animation: er-spin 0.7s linear infinite; }
+.er-card { transition: transform 0.18s ease, box-shadow 0.18s ease; cursor: pointer; }
+.er-card:hover { transform: scale(1.03); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+.er-live-dot { animation: er-pulse 1.4s ease-in-out infinite; }
+@media (max-width: 600px) {
+  #race-cal { margin-inline: 10px !important; }
+  #er-live { margin-left: 0 !important; margin-right: 0 !important; width: 100% !important; }
+  .er-live-row { flex-wrap: wrap !important; }
+  .er-live-btn { display: block !important; margin-top: 12px !important; text-align: center !important; width: 100% !important; box-sizing: border-box !important; }
+}

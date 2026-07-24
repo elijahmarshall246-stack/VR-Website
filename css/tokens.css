@@ -1,0 +1,28 @@
+
+@font-face{
+  font-family:'Racing Sans One'; font-style:normal; font-weight:400; font-display:swap;
+  src:url('../fonts/racing-sans-one-400.woff2') format('woff2');
+}
+
+:root{
+  --vr-orange:#F1592A;
+  --vr-orange-soft:#F27C57;
+  --vr-blue:#02AEEE;
+  --vr-blue-deep:#074A77;
+  --vr-blue-ink:#005270;
+  --vr-red:#FF363D;
+  --vr-ink:#000000;
+  --vr-ink-2:#31373D;
+  --vr-grey:#EBEBEB;
+  --vr-grey-2:#666672;
+  --vr-white:#FFFFFF;
+
+  --vr-font-display:'Racing Sans One',system-ui,sans-serif;
+  --vr-font-head:'Arial',system-ui,sans-serif;
+  --vr-font-btn:'Arial',system-ui,sans-serif;
+  --vr-font-body:'Arial',system-ui,sans-serif;
+  --vr-font-mono:'Lucida Console','Courier New',monospace;
+
+  --vr-max:1400px;
+  --vr-header-h:96px;
+}
