@@ -78,10 +78,6 @@
 .vr-stat-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:16px;}
 .vr-stat-card{
   background:var(--vr-white); border:2px solid var(--vr-grey); border-radius:16px; padding:18px 20px;
-  /* Let a card shrink below its content's intrinsic min-width. Without this the
-     class card's minmax(140px,…) grid sets a ~290px min-content floor that the
-     single-column .vr-stat-grid passes on to EVERY card, overflowing narrow
-     phones (then clipped by body{overflow-x:hidden}). */
   min-width:0;
 }
 .vr-stat-card--wide{grid-column:1 / -1;}
@@ -138,10 +134,7 @@
 .vr-stat-titles__val{flex:0 0 auto; font-family:var(--vr-font-display); font-size:18px; color:var(--vr-orange); line-height:1;}
 .vr-stat-titles__val small{font-family:var(--vr-font-mono); font-size:10px; letter-spacing:.06em; color:var(--vr-grey-2); margin-left:4px; text-transform:uppercase;}
 
-/* Driver stats ------------------------------------------------------------
-   Expandable per-driver rows: summary line, then their metrics and every event
-   they entered with a link through to that event's results. Used both in the
-   Stats page card and on the full /stats/driver-stats page. */
+/* Driver stats ------------------------------------------------------------ */
 .vr-dstat-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px;}
 .vr-dstat{border:2px solid var(--vr-grey); border-radius:14px; overflow:hidden; background:var(--vr-white);}
 .vr-dstat.is-open{border-color:var(--vr-orange);}
@@ -158,7 +151,7 @@
 .vr-dstat.is-open .vr-dstat__pos{color:var(--vr-orange);}
 .vr-dstat__id{flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:3px;}
 .vr-dstat__name{
-  font-family:var(--vr-font-head); font-weight:800; text-transform:uppercase; letter-spacing:.02em;
+  font-family:var(--vr-font-head); font-weight:700; text-transform:uppercase; letter-spacing:.02em;
   font-size:14px; color:var(--vr-ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
 .vr-dstat__sub{font-family:var(--vr-font-mono); font-size:11px; letter-spacing:.04em; color:var(--vr-grey-2);}
@@ -248,16 +241,10 @@
   .vr-dstat-ev__btn{margin-left:auto;}
 }
 
-/* Board pages go edge-to-edge, so shell.css zeroes .vr-container padding at
-   ≤560px. The stats page isn't a board — restore side gutters so the cards
-   don't hit (and get clipped at) the screen edge, and tighten the card and
-   class-record padding so two class boxes still fit across a phone. */
+
 @media(max-width:560px){
   .vr-container{padding:0 14px;}
   .vr-stat-card{padding:16px 14px;}
-  /* Fixed 2-up columns (no 140px min) always divide the card width and can't
-     force the card wider than the screen; the time scales down so it never
-     spills its box. */
   .vr-stat-classgrid{grid-template-columns:1fr 1fr; gap:10px;}
   .vr-stat-classrec{padding:12px 6px; min-width:0;}
   .vr-stat-classrec__time{font-size:clamp(16px,4.4vw,22px);}
