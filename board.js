@@ -1,4 +1,9 @@
 (function(){
+  /* Spreadsheet error values leak out of the sheet as ordinary text; read them
+     as blank so #REF! / #N/A never render on the board. */
+  const VR_ERR_RE = /^#(ref|n\/?a|name|value|div\/0|null|num|spill|getting_data)[!?]?$/i;
+  const noErr = v => VR_ERR_RE.test(String(v==null?'':v).trim()) ? '' : v;
+
   /* =================================================================
      CONFIG
      ================================================================= */
@@ -125,14 +130,15 @@
 
     heats: {
       gid: '1005565792',
-      range: 'B5:Q66',
-      runLabels: ['Qualifying 1','Qualifying 2','Qualifying 3'],
-    
-      heatCol: 0,                      
-      blocks: [                     
+      range: 'B5:V66',
+      runLabels: ['Qualifying 1','Qualifying 2','Qualifying 3','Qualifying 4'],
+
+      heatCol: 0,
+      blocks: [
         { num: 2, driver: 3, time: 4 },
         { num: 7, driver: 8, time: 9 },
         { num: 12, driver: 13, time: 14 },
+        { num: 17, driver: 18, time: 19 },
       ],
       entriesPerHeat: 2,              
     },
@@ -220,6 +226,8 @@
   /* ===== RENDER HEATS GRID ===== */
   function renderHeats(runs){
     grid.innerHTML='';
+    // Column count follows the runs that actually have data (3 or 4).
+    grid.style.setProperty('--hcols', String(Math.max(1,runs.length)));
     runs.forEach(run=>{
       let runBest=Infinity; run.heats.forEach(h=>h.entries.forEach(e=>{ if(e.ms!=null&&e.ms<SENTINEL_MS&&e.ms<runBest) runBest=e.ms; }));
       const col=document.createElement('div'); col.className='lb__hcol';
@@ -267,7 +275,7 @@
         el('lbErr').textContent='Sheet error: '+msg+' — ensure sheet is shared ("Anyone with link") and published to the web (File > Share > Publish to web).'; hideLoading(); markUpdated(false,false); return;
       }
       const rows=resp.table.rows||[];
-      const getVal=(r,c)=>{ if(c==null) return ''; const cell=rows[r]&&rows[r].c&&rows[r].c[c]; if(!cell) return ''; return cell.f!=null?cell.f:(cell.v!=null?String(cell.v):''); };
+      const getVal=(r,c)=>{ if(c==null) return ''; const cell=rows[r]&&rows[r].c&&rows[r].c[c]; if(!cell) return ''; return noErr(cell.f!=null?cell.f:(cell.v!=null?String(cell.v):'')); };
       const runs=h.runLabels.map(l=>({label:l, heats:[]}));
       let curHeat=''; const rowsByHeat={};
       for(let r=0;r<rows.length;r++){
@@ -283,7 +291,9 @@
       }
       h.blocks.forEach((b,bi)=>{ const map=rowsByHeat[bi]||{};
         Object.keys(map).forEach(hn=>runs[bi].heats.push({heat:hn,entries:map[hn]})); });
-      cb(runs);
+      // A run the sheet has no rows for (e.g. Qualifying 4 at an event that only
+      // runs three) is dropped so it never renders as an empty column.
+      cb(runs.filter(run=>run.heats.length));
     };
     script.onerror=function(){ delete window[cbName]; script.remove();
       el('lbErr').textContent='Could not reach data'; hideLoading(); markUpdated(false,false); };
@@ -303,7 +313,7 @@
     script.src=base+'&tqx=out:json;responseHandler:'+cbName;
     document.head.appendChild(script);
   }
-  const cellVal=c=>c?(c.f!=null?c.f:(c.v!=null?String(c.v):'')):'';
+  const cellVal=c=>noErr(c?(c.f!=null?c.f:(c.v!=null?String(c.v):'')):'');
 
 
   function loadLiveStatus(){
@@ -348,9 +358,11 @@
   /* ===== ORCHESTRATION ===== */
   function cycle(isInit){
     const done=runs=>{
-      const str=JSON.stringify(runs.map(r=>r.heats.map(h=>h.entries.map(e=>e.ms))));
+      const str=JSON.stringify(runs.map(r=>r.heats.map(h=>h.entries.map(e=>[e.num,e.driver,e.ms]))));
       const changed=str!==lastDataStr; lastDataStr=str;
-      renderHeats(runs); renderOverall(deriveOverall(runs));
+      // Only re-render when the data actually changed — otherwise the 10s poll
+      // rebuilds the list every time and re-triggers the row animation ("jump").
+      if(changed||isInit){ renderHeats(runs); renderOverall(deriveOverall(runs)); }
       hideLoading();
       if(!isInit) markUpdated(true,changed);
     };
@@ -463,7 +475,7 @@
       if(!ref) return ''; const p=cellToIndex(ref); if(!p) return '';
       const r=p.row-originRow, c=p.col-originCol; if(r<0||c<0) return '';
       const row=fetchedRows[r]; if(!row||!row.c||row.c[c]==null) return '';
-      const cell=row.c[c]; return String(cell.f!=null?cell.f:(cell.v!=null?cell.v:'')).trim();
+      const cell=row.c[c]; return noErr(String(cell.f!=null?cell.f:(cell.v!=null?cell.v:'')).trim());
     }
     function colShift(ref,n){ const p=cellToIndex(ref); if(!p) return ''; return colLetter(p.col+n)+(p.row+1); }
 
