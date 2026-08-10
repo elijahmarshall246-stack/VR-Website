@@ -4,8 +4,8 @@
    layout. Mirrors the parsing used by js/previous.js; kept standalone so the
    working past-events page is not disturbed. Exposes window.VRResults. */
 window.VRResults = (function(){
-  var HEATS = { heatCol:0, runLabels:['Qualifying 1','Qualifying 2','Qualifying 3'],
-    blocks:[ {num:2,driver:3,time:4}, {num:7,driver:8,time:9}, {num:12,driver:13,time:14} ] };
+  var HEATS = { heatCol:0, runLabels:['Qualifying 1','Qualifying 2','Qualifying 3','Qualifying 4'],
+    blocks:[ {num:2,driver:3,time:4}, {num:7,driver:8,time:9}, {num:12,driver:13,time:14}, {num:17,driver:18,time:19} ] };
 
   var KO = {
     carCol: { R16:1, QF:5, SF:9, F:13 },
@@ -106,7 +106,9 @@ window.VRResults = (function(){
       }
       HEATS.blocks.forEach(function(b,bi){ var map=rowsByHeat[bi]||{};
         Object.keys(map).forEach(function(hn){ runs[bi].heats.push({heat:hn, entries:map[hn]}); }); });
-      return runs;
+      // Events that don't run a Qualifying 4 leave those columns empty; drop the
+      // run so nothing downstream sees a phantom round.
+      return runs.filter(function(run){ return run.heats.length; });
     }
     function deriveOverall(runs){
       var best={};

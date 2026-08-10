@@ -130,14 +130,15 @@
 
     heats: {
       gid: '1005565792',
-      range: 'B5:Q66',
-      runLabels: ['Qualifying 1','Qualifying 2','Qualifying 3'],
-    
-      heatCol: 0,                      
-      blocks: [                     
+      range: 'B5:V66',
+      runLabels: ['Qualifying 1','Qualifying 2','Qualifying 3','Qualifying 4'],
+
+      heatCol: 0,
+      blocks: [
         { num: 2, driver: 3, time: 4 },
         { num: 7, driver: 8, time: 9 },
         { num: 12, driver: 13, time: 14 },
+        { num: 17, driver: 18, time: 19 },
       ],
       entriesPerHeat: 2,              
     },
@@ -225,6 +226,8 @@
   /* ===== RENDER HEATS GRID ===== */
   function renderHeats(runs){
     grid.innerHTML='';
+    // Column count follows the runs that actually have data (3 or 4).
+    grid.style.setProperty('--hcols', String(Math.max(1,runs.length)));
     runs.forEach(run=>{
       let runBest=Infinity; run.heats.forEach(h=>h.entries.forEach(e=>{ if(e.ms!=null&&e.ms<SENTINEL_MS&&e.ms<runBest) runBest=e.ms; }));
       const col=document.createElement('div'); col.className='lb__hcol';
@@ -288,7 +291,9 @@
       }
       h.blocks.forEach((b,bi)=>{ const map=rowsByHeat[bi]||{};
         Object.keys(map).forEach(hn=>runs[bi].heats.push({heat:hn,entries:map[hn]})); });
-      cb(runs);
+      // A run the sheet has no rows for (e.g. Qualifying 4 at an event that only
+      // runs three) is dropped so it never renders as an empty column.
+      cb(runs.filter(run=>run.heats.length));
     };
     script.onerror=function(){ delete window[cbName]; script.remove();
       el('lbErr').textContent='Could not reach data'; hideLoading(); markUpdated(false,false); };

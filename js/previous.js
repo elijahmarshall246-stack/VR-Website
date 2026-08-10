@@ -6,8 +6,8 @@
 
   var FETCH_RANGE = 'A1:U240';
 
-  var HEATS = { heatCol:0, runLabels:['Qualifying 1','Qualifying 2','Qualifying 3'],
-    blocks:[ {num:2,driver:3,time:4}, {num:7,driver:8,time:9}, {num:12,driver:13,time:14} ] };
+  var HEATS = { heatCol:0, runLabels:['Qualifying 1','Qualifying 2','Qualifying 3','Qualifying 4'],
+    blocks:[ {num:2,driver:3,time:4}, {num:7,driver:8,time:9}, {num:12,driver:13,time:14}, {num:17,driver:18,time:19} ] };
 
   var KO = {
     carCol: { R16:1, QF:5, SF:9, F:13 },
@@ -131,7 +131,9 @@
     }
     HEATS.blocks.forEach(function(b,bi){ var map=rowsByHeat[bi]||{};
       Object.keys(map).forEach(function(hn){ runs[bi].heats.push({heat:hn, entries:map[hn]}); }); });
-    return runs;
+    // Events that don't run a Qualifying 4 (every event before 2026) have no rows
+    // in those columns — drop the run so it never renders as an empty column.
+    return runs.filter(function(run){ return run.heats.length; });
   }
   function deriveOverall(runs){
     var best={};
@@ -219,6 +221,8 @@
   }
   function renderHeats(runs){
     grid.innerHTML='';
+    // Column count follows the runs that actually have data (3 or 4).
+    grid.style.setProperty('--hcols', String(Math.max(1, runs.length)));
     runs.forEach(function(run){
       var runBest=Infinity; run.heats.forEach(function(h){h.entries.forEach(function(e){ if(e.ms!=null&&e.ms<SENTINEL&&e.ms<runBest) runBest=e.ms; });});
       var col=document.createElement('div'); col.className='lb__hcol';
