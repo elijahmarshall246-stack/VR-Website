@@ -14,6 +14,18 @@
       if (m) { location.replace('/past-events?event=' + m[1] + location.hash); }
     })();
   </script>
+
+  <!-- Google tag (gtag.js). Deliberately after the bounce script above: a
+       /past-events/<slug> deep link redirects before this loads, so only real
+       404s are counted. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-C3SKHBHP2S"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-C3SKHBHP2S');
+  </script>
+
   <style>
     body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
       font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#fff;color:#0e2a47;text-align:center;padding:24px;}
