@@ -54,6 +54,22 @@
     return TYPES[k] || { bg:"#F1592A", label: type||"Event" };
   }
 
+  function attr(s){
+    return String(s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  // Column heading: "Enter Event Link" (headers arrive lowercased/trimmed)
+  function enterLink(ev){
+    return (ev["enter event link"] || ev["enter event"] || "").trim();
+  }
+
+  // Only rendered when the sheet cell actually has a link in it
+  function enterBtn(ev, extraStyle, cls){
+    var href = enterLink(ev);
+    if(!href) return "";
+    return '<a class="'+(cls||"")+'" href="'+attr(href)+'" target="_blank" rel="noopener" style="flex-shrink:0;display:inline-block;background:#fff;color:#1E1E1E;font-size:14px;font-weight:700;padding:12px 24px;border-radius:99px;text-decoration:none;text-transform:uppercase;letter-spacing:0.05em;font-family:Arial,sans-serif;white-space:nowrap;'+(extraStyle||"")+'">Enter Event</a>';
+  }
+
   function liveBanner(ev){
     var t = getType(ev.type);
     var isFeatured = (ev.featured||"").toLowerCase() === "yes";
@@ -78,7 +94,10 @@
           +'</div>'
           +'<div style="font-size:22px;font-weight:800;color:#fff;line-height:1.2;text-transform:uppercase;font-family:Arial,sans-serif;">'+(ev.name||'Untitled Event')+'</div>'
         +'</div>'
-        +(isSocial ? '' : '<a class="er-live-btn" href="'+(ev.link||'https://www.jollyrogercruises.com')+'" target="_blank" style="flex-shrink:0;display:inline-block;background:#F1592A;color:#fff;font-size:14px;font-weight:700;padding:12px 24px;border-radius:99px;text-decoration:none;text-transform:uppercase;letter-spacing:0.05em;font-family:Arial,sans-serif;white-space:nowrap;">See Live Results</a>')
+        +'<div class="er-live-actions" style="display:flex;align-items:center;gap:8px;flex-shrink:0;">'
+          +(isSocial ? '' : '<a class="er-live-btn" href="'+(ev.link||'https://www.jollyrogercruises.com')+'" target="_blank" style="flex-shrink:0;display:inline-block;background:#F1592A;color:#fff;font-size:14px;font-weight:700;padding:12px 24px;border-radius:99px;text-decoration:none;text-transform:uppercase;letter-spacing:0.05em;font-family:Arial,sans-serif;white-space:nowrap;">See Live Results</a>')
+          +enterBtn(ev, "", "er-live-btn")
+        +'</div>'
       +'</div>'
 
       +(ev.desc ? '<div style="font-size:13px;color:rgba(255,255,255,0.85);line-height:1.6;margin-bottom:12px;font-family:Arial,sans-serif;">'+ev.desc+'</div>' : '')
@@ -109,6 +128,8 @@
       +'</div>'
 
       +(ev.desc ? '<div style="font-size:14px;color:rgba(255,255,255,0.85);line-height:1.6;margin-bottom:12px;font-family:Arial,sans-serif;">'+ev.desc+'</div>' : '')
+
+      +enterBtn(ev, "margin-bottom:14px;")
 
       +'<div style="border-top:1px solid rgba(255,255,255,0.2);padding-top:10px;font-size:12px;color:rgba(255,255,255,0.8);font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:space-between;">'
       +'<span><svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="vertical-align:middle;margin-right:5px;opacity:0.8;"><circle cx="8" cy="8" r="6.5" stroke="#fff" stroke-width="1.4"/><path d="M8 5v3.5l2 1.5" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/></svg>'+(ev.time||'TBA')+(ev.year?' <span style="color:rgba(255,255,255,0.45);margin-left:8px;">'+ev.year+'</span>':'')+' </span>'

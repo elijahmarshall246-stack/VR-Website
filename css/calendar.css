@@ -9,4 +9,5 @@
   #er-live { margin-left: 0 !important; margin-right: 0 !important; width: 100% !important; }
   .er-live-row { flex-wrap: wrap !important; }
   .er-live-btn { display: block !important; margin-top: 12px !important; text-align: center !important; width: 100% !important; box-sizing: border-box !important; }
+  .er-live-actions { width: 100% !important; flex-direction: column !important; gap: 0 !important; }
 }
