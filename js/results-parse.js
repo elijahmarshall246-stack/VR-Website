@@ -321,6 +321,27 @@ window.VRResults = (function(){
     });
   }
 
+  /* Every timed run inside a knockout bracket → [{driver,car,ms,round}].
+     Bracket slots carry the same raw time strings qualifying does, so lap
+     records can draw on them too. Byes/placeholders, slots where the sheet
+     never named a driver, and the 30-minute non-time sentinel are skipped. */
+  function koRuns(ko){
+    var out=[];
+    ['R16','QF','SF','F'].forEach(function(rk){
+      ((((ko||{}).rounds)||{})[rk]||[]).forEach(function(m){
+        [m.slot1, m.slot2].forEach(function(s){
+          if(!s) return;
+          var name=String(s.driver||'').trim();
+          if(!name || /^(bye|tbd|\?|—|-)$/i.test(name) || isErrText(name)) return;
+          var ms=parseTime(s.time);
+          if(ms==null || ms<=0 || ms>=SENTINEL) return;
+          out.push({ driver:name, car:s.car||'', ms:ms, round:rk });
+        });
+      });
+    });
+    return out;
+  }
+
   // Winner + runner-up (top 2) of a knockout final, or null if undecided.
   function finalResult(ko){
     var fm = ko.rounds && ko.rounds['F'];
@@ -335,6 +356,7 @@ window.VRResults = (function(){
   return {
     parseEvent: parseEvent,
     finalResult: finalResult,
+    koRuns: koRuns,
     buildGrid: buildGrid,
     parseTime: parseTime,
     fmtTime: fmtTime,

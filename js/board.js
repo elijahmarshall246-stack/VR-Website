@@ -4,6 +4,13 @@
   const VR_ERR_RE = /^#(ref|n\/?a|name|value|div\/0|null|num|spill|getting_data)[!?]?$/i;
   const noErr = v => VR_ERR_RE.test(String(v==null?'':v).trim()) ? '' : v;
 
+  /* The round header row ("Round of 16" …) is what every bracket read is
+     anchored to — see loadOneKnockoutTab. Every class tab carries it on row 5;
+     finding it anywhere else means gviz dropped blank rows above it and the
+     whole block needs shifting to compensate. */
+  const KO_HEADER_RE = /round\s*of\s*16/i;
+  const KO_HEADER_ROW = 5;
+
   /* =================================================================
      CONFIG
      ================================================================= */
@@ -19,7 +26,7 @@
     knockouts: {
       showWinner: false,  
       categories: [
-        { name: 'BimmaCup', gid: '2038855303', fetchRange: 'H7:X37',
+        { name: 'BimmaCup', gid: '2038855303',
           rounds: {
             R16: [
               { match:8, slot1:'H7', slot2:'H9' },
@@ -46,7 +53,7 @@
             W:  'X22',
           }
         },
-        { name: 'BimmaCup Jr.', gid: '1123204078', fetchRange: 'C7:S37',
+        { name: 'BimmaCup Jr.', gid: '1123204078',
           rounds: {
             R16: [
               { match:8, slot1:'C7',   slot2:'C9'   },
@@ -72,7 +79,7 @@
             W:  'S22',
           }
         },
-        { name: 'Touring', gid: '1830775932', fetchRange: 'C7:S37',
+        { name: 'Touring', gid: '1830775932',
           rounds: {
             R16: [
               { match:8, slot1:'C7',   slot2:'C9'   },
@@ -98,7 +105,7 @@
             W:  'S22',
           }
         },
-        { name: 'AWD', gid: '2111958111', fetchRange: 'H7:X37',
+        { name: 'AWD', gid: '2111958111',
           rounds: {
             R16: [
               { match:8, slot1:'H7',   slot2:'H9'   },
@@ -450,37 +457,66 @@
   function colLetter(n){ let s='',k=n+1;
     while(k>0){s=String.fromCharCode(65+(k-1)%26)+s; k=Math.floor((k-1)/26);} return s; }
 
-  /* --- JSONP fetch for a sheet range --- */
-  function loadOneRound(gid, range, cb){
-    const base=`https://docs.google.com/spreadsheets/d/${CONFIG.sheetId}/gviz/tq?gid=${gid}&range=${range}`;
+  /* --- JSONP fetch for one class tab ---
+     Deliberately sent WITHOUT a `range`. gviz omits any row that is blank
+     across the range it was asked for — not just at the edges, anywhere in the
+     middle — and gives no row numbers back, so a narrow range around the
+     bracket silently loses rows the moment part of that bracket is empty and
+     every row below it shifts up. Reading the whole tab keeps those rows alive
+     on the strength of the helper columns either side of the bracket, which the
+     knockout results never touch. Costs ~22KB per class instead of ~6KB. */
+  function loadOneRound(gid, cb){
+    const base=`https://docs.google.com/spreadsheets/d/${CONFIG.sheetId}/gviz/tq?gid=${gid}`;
     const cbName='__gvizKo'+(++_gvizSeq);
     const script=document.createElement('script');
-    window[cbName]=function(resp){ delete window[cbName]; script.remove(); cb(resp.status==='ok'?(resp.table.rows||[]):null); };
+    window[cbName]=function(resp){ delete window[cbName]; script.remove(); cb(resp.status==='ok'?(resp.table||null):null); };
     script.onerror=function(){ delete window[cbName]; script.remove(); cb(null); };
-    script.src=base+'&headers=0&tqx=out:json;responseHandler:'+cbName;
+    script.src=base+'&headers=0&tq=select%20*&tqx=out:json;responseHandler:'+cbName;
     document.head.appendChild(script);
   }
 
 
   function loadOneKnockoutTab(catCfg, cb){
     const ROUND_KEYS=['R16','QF','SF','F'];
-    if(!catCfg.fetchRange){ cb({name:catCfg.name, rounds:{}}); return; }
+    if(!catCfg.gid || !catCfg.rounds){ cb({name:catCfg.name, rounds:{}}); return; }
 
-    const m=catCfg.fetchRange.match(/^([A-Za-z]+)(\d+)/);
-    if(!m){ cb({name:catCfg.name, rounds:{}}); return; }
-    const originCol=cellToIndex(m[1]+'1').col, originRow=parseInt(m[2])-1;
-
-    let fetchedRows=[];
+    /* The whole tab comes back, so a cell's row index is simply its sheet row
+       minus one — unless gviz dropped a blank row above it, which shifts every
+       row below up. Re-finding the round header tells us by how much. */
+    let fetchedRows=[], colIdx=null, rowShift=0;
     function readCell(ref){
       if(!ref) return ''; const p=cellToIndex(ref); if(!p) return '';
-      const r=p.row-originRow, c=p.col-originCol; if(r<0||c<0) return '';
+      const c=colIdx?colIdx[colLetter(p.col)]:null; if(c==null) return '';
+      const r=p.row+rowShift; if(r<0) return '';
       const row=fetchedRows[r]; if(!row||!row.c||row.c[c]==null) return '';
       const cell=row.c[c]; return noErr(String(cell.f!=null?cell.f:(cell.v!=null?cell.v:'')).trim());
     }
     function colShift(ref,n){ const p=cellToIndex(ref); if(!p) return ''; return colLetter(p.col+n)+(p.row+1); }
+    function cellText(row,c){ return c==null?'':String(c.f!=null?c.f:(c.v!=null?c.v:'')).trim(); }
 
-    loadOneRound(catCfg.gid, catCfg.fetchRange, rows=>{
-      fetchedRows=rows||[];
+    loadOneRound(catCfg.gid, table=>{
+      fetchedRows=(table&&table.rows)||[];
+
+      // Map columns by the ids gviz reports rather than by position, so a
+      // column can never drift either.
+      colIdx={}; ((table&&table.cols)||[]).forEach((c,i)=>{ if(c&&c.id) colIdx[c.id]=i; });
+
+      const hIdx=fetchedRows.findIndex(row=>((row&&row.c)||[]).some(c=>
+        c && KO_HEADER_RE.test(cellText(row,c))));
+      rowShift = hIdx>=0 ? hIdx-(KO_HEADER_ROW-1) : 0;
+
+      /* Last line of defence. The sheet labels its own final two rows above the
+         first finalist, one column right of the car number. If that label is in
+         the response but not where the config expects it, rows have gone
+         missing below the header and nothing under them lines up — better to
+         say so than to render names against the wrong matches. Tabs that carry
+         no labels at all (Touring) simply skip the check. */
+      let misaligned=false;
+      const fdef=(catCfg.rounds.F||[])[0], fp=fdef&&fdef.slot1?cellToIndex(fdef.slot1):null;
+      if(fp){
+        const seen=fetchedRows.some(row=>((row&&row.c)||[]).some(c=>c&&/^final$/i.test(cellText(row,c))));
+        if(seen && !/^final$/i.test(readCell(colLetter(fp.col+1)+(fp.row-1)))) misaligned=true;
+      }
 
       const roundResults={};
       ROUND_KEYS.forEach(rk=>{
@@ -493,11 +529,19 @@
       let winnerCar='';
       if(typeof catCfg.rounds.W==='string') winnerCar=readCell(catCfg.rounds.W);
 
+      /* Keep the bracket skeleton intact. Dropping the matches the sheet hasn't
+         filled in yet collapses a round from eight slots to however many have
+         run, and because every column divides its height evenly the survivors
+         stop lining up with the round they feed — one half-run R16 drags the
+         whole bracket out of alignment. So skip the rounds before the first one
+         carrying data (a field that starts at the quarter-finals has no round of
+         16), then render every round from there on in full, empty slots and all.
+         The Finals column stays on screen as TBD while the semis are running. */
+      const hasData=rk=>(roundResults[rk]||[]).some(m=>m.slot1.car||m.slot1.driver||m.slot2.car||m.slot2.driver);
+      const firstLive=ROUND_KEYS.findIndex(hasData);
       const rounds={};
-      ROUND_KEYS.forEach(rk=>{
-        const list=roundResults[rk]; if(!list) return;
-        const filled=list.filter(m=>m.slot1.car||m.slot1.driver||m.slot2.car||m.slot2.driver);
-        if(filled.length) rounds[rk]=filled;
+      if(firstLive>=0) ROUND_KEYS.slice(firstLive).forEach(rk=>{
+        if(roundResults[rk]) rounds[rk]=roundResults[rk];
       });
 
       const fm=rounds['F'];
@@ -509,7 +553,7 @@
           else if(t0!=null) final.slot1.winner=true; else if(t1!=null) final.slot2.winner=true; }
       }
 
-      cb({name:catCfg.name, rounds});
+      cb({name:catCfg.name, rounds, misaligned});
     });
   }
 
@@ -534,7 +578,9 @@
 
   function renderBracket(catData){
     const bracket=el('lbBracket');
-    if(!catData){ bracket.innerHTML='<div style="padding:20px;color:var(--muted);font-family:var(--font-mono);font-size:12px;">No data yet — ensure the sheet is published and has rows in A:Round B:Match C:Car1 D:Driver1 E:Time1 F:Car2 G:Driver2 H:Time2 I:Winner format.</div>'; return; }
+    const note=msg=>{ bracket.innerHTML=`<div class="lb__bempty">${msg}</div>`; };
+    if(!catData){ note('No data yet — check the sheet is published and that the cell ranges in CONFIG still match the tab layout.'); return; }
+    if(catData.misaligned){ note('Bracket rows do not line up with the sheet — the tab layout has moved from what CONFIG expects.'); return; }
     const ROUND_LABELS={R16:'Round of 16', QF:'Quarter-Finals', SF:'Semi-Finals', F:'Finals'};
     const ROUNDS=['R16','QF','SF','F'];
     let html='';
@@ -568,6 +614,8 @@
       }
       html+=`</div></div>`;
     });
+    if(!html){ note('Bracket not started yet.'); return; }
+
     // Winner column
     const finalsMatches=catData.rounds['F'];
     if(CONFIG.knockouts.showWinner&&finalsMatches&&finalsMatches.length){

@@ -54,25 +54,38 @@
     evs.forEach(function(ev){
       var P = ev.parsed || {};
       if(ev.year) years[ev.year]=1;
+      var clsOf={};                               // driver key -> class from qualifying
+
+      // Lap records come from every timed run of the day — qualifying heats and
+      // knockout runs alike — so a record set in a bracket still counts.
+      function record(ms, driver, canon){
+        if(ms==null) return;
+        var k=nm(driver);                         // registers the best spelling
+        if(!fastest || ms<fastest.ms) fastest={ms:ms,key:k,driver:driver,event:ev.name,date:ev.date,cls:canon};
+        if(canon && (!fastestByClass[canon] || ms<fastestByClass[canon].ms)) fastestByClass[canon]={ms:ms,key:k,driver:driver,event:ev.name,date:ev.date};
+      }
 
       (P.overall||[]).forEach(function(d){
         if(!d.driver) return;
         var k=nm(d.driver);                       // registers the best spelling
-        if(d.ms!=null){
-          var canon=canonClass(d['class']);
-          if(!fastest || d.ms<fastest.ms) fastest={ms:d.ms,key:k,driver:d.driver,event:ev.name,date:ev.date,cls:canon};
-          if(canon && (!fastestByClass[canon] || d.ms<fastestByClass[canon].ms)) fastestByClass[canon]={ms:d.ms,key:k,driver:d.driver,event:ev.name,date:ev.date};
-        }
+        if(d['class'] && !clsOf[k]) clsOf[k]=d['class'];
+        record(d.ms, d.driver, canonClass(d['class']));
       });
 
       (P.knockouts||[]).forEach(function(ko){
+        // The bracket usually names its own class; fall back to the driver's
+        // qualifying class for a bracket titled something we don't recognise.
+        var koCls=canonClass(ko.name);
+        VRR.koRuns(ko).forEach(function(r){
+          record(r.ms, r.driver, koCls || canonClass(clsOf[VRR.driverKey(r.driver)]));
+        });
+
         var res=VRR.finalResult(ko); if(!res) return;
         var wLabel=slotName(res.winner); if(!wLabel) return;   // undecided/placeholder final → skip
         var wk=nm(wLabel);
         wins[wk]=(wins[wk]||0)+1;
         podiums[wk]=(podiums[wk]||0)+1;
-        var ctitle=canonClass(ko.name);
-        if(ctitle){ classTitles[ctitle]=classTitles[ctitle]||{}; classTitles[ctitle][wk]=(classTitles[ctitle][wk]||0)+1; }
+        if(koCls){ classTitles[koCls]=classTitles[koCls]||{}; classTitles[koCls][wk]=(classTitles[koCls][wk]||0)+1; }
         var ru=slotName(res.runnerUp);
         if(ru){ podiums[nm(ru)]=(podiums[nm(ru)]||0)+1; }
       });
@@ -140,7 +153,7 @@
       (meta?'<div class="vr-stat-hero__meta">'+meta+'</div>':'')+
     '</div>';
   }
-  // Static fastest-time hero: overall fastest lap on record only.
+  // Static fastest-time hero: overall fastest lap on record only (any session).
   function buildHero(S){
     if(!S.fastest){
       return '<div class="vr-stat-hero vr-stat-hero--overall"><div class="vr-stat-hero__label">Fastest Time on Record</div><div class="vr-stat-hero__time">—</div></div>';

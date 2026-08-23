@@ -1,5 +1,5 @@
 /* Per-driver history: every event a driver entered, how they finished, how many
-   knockouts they won and their personal-best qualifying lap.
+   knockouts they won and their personal-best lap (qualifying or bracket).
    Shared by the Stats page card (top 5) and the full /stats/driver-stats page.
    Depends on window.VRResults. Exposes window.VRDriverStats. */
 window.VRDriverStats = (function(){
@@ -76,7 +76,7 @@ window.VRDriverStats = (function(){
         if(!d.driver) return;
         var k=VRR.driverKey(d.driver); if(!k) return;
         var slot=per[k];
-        if(!slot){ per[k]=slot={ driver:d.driver, pos:i+1, ms:d.ms, cls:d['class']||'', ko:null }; }
+        if(!slot){ per[k]=slot={ driver:d.driver, pos:i+1, ms:d.ms, koMs:null, cls:d['class']||'', ko:null }; }
         else{
           slot.driver=VRR.betterName(slot.driver, d.driver);
           if(d.ms!=null && (slot.ms==null || d.ms<slot.ms)){ slot.pos=i+1; slot.ms=d.ms; }
@@ -90,11 +90,19 @@ window.VRDriverStats = (function(){
             [m.slot1, m.slot2].forEach(function(s){
               var label=slotName(s); if(!label) return;
               var k=VRR.driverKey(label); if(!k) return;
-              if(!per[k]) per[k]={ driver:label, pos:null, ms:null, cls:'', ko:null };
+              if(!per[k]) per[k]={ driver:label, pos:null, ms:null, koMs:null, cls:'', ko:null };
               else per[k].driver=VRR.betterName(per[k].driver, label);
               if(deepest[k]==null || ri>deepest[k]) deepest[k]=ri;
             });
           });
+        });
+
+        // Bracket runs are timed too, so they count towards a personal best.
+        // Kept apart from `ms` so an event row still pairs its qualifying
+        // position with the qualifying time.
+        VRR.koRuns(ko).forEach(function(r){
+          var k=VRR.driverKey(r.driver), slot=k?per[k]:null; if(!slot) return;
+          if(slot.koMs==null || r.ms<slot.koMs) slot.koMs=r.ms;
         });
 
         var res=VRR.finalResult(ko);
@@ -115,7 +123,9 @@ window.VRDriverStats = (function(){
         var slot=per[k], d=record(slot.driver); if(!d) return;
         d.count++;
         if(slot.ko && slot.ko.rank===5) d.wins++;
-        if(slot.ms!=null && (d.bestMs==null || slot.ms<d.bestMs)){ d.bestMs=slot.ms; d.bestEvent=ev.name; }
+        var bestOfDay=slot.ms;
+        if(slot.koMs!=null && (bestOfDay==null || slot.koMs<bestOfDay)) bestOfDay=slot.koMs;
+        if(bestOfDay!=null && (d.bestMs==null || bestOfDay<d.bestMs)){ d.bestMs=bestOfDay; d.bestEvent=ev.name; }
         d.events.push({
           name: ev.name, date: ev.date, type: ev.type, slug: ev.slug || VRR.eventSlug(ev),
           pos: slot.pos, ms: slot.ms, ko: slot.ko,

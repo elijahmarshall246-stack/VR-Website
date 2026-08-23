@@ -169,13 +169,18 @@
       // Some events only fill the car # in early rounds; recover the name by car number.
       if(car&&!driver&&carNames[car]) driver=carNames[car];
       return {car:car, driver:driver, time:gv(G,R,c+2)}; };
-    var rounds={};
-    ['R16','QF','SF','F'].forEach(function(rk){
+    // Same skeleton rule as the live board: keep every match of a round that
+    // has started, so a bracket the sheet never finished still lines up with
+    // the round it feeds instead of collapsing upwards.
+    var RKS=['R16','QF','SF','F'], all={};
+    RKS.forEach(function(rk){
       var col=KO.carCol[rk];
-      var l=KO.rounds[rk].map(function(m){ return {match:m[0], slot1:slot(m[1],col), slot2:slot(m[2],col)}; });
-      var filled=l.filter(function(m){ return m.slot1.car||m.slot1.driver||m.slot2.car||m.slot2.driver; });
-      if(filled.length) rounds[rk]=filled;
+      all[rk]=KO.rounds[rk].map(function(m){ return {match:m[0], slot1:slot(m[1],col), slot2:slot(m[2],col)}; });
     });
+    function hasData(rk){ return all[rk].some(function(m){ return m.slot1.car||m.slot1.driver||m.slot2.car||m.slot2.driver; }); }
+    var rounds={}, firstLive=-1;
+    for(var fi=0; fi<RKS.length; fi++){ if(hasData(RKS[fi])){ firstLive=fi; break; } }
+    if(firstLive>=0) RKS.slice(firstLive).forEach(function(rk){ rounds[rk]=all[rk]; });
     var winnerRow=O+KO.winner.row;
     var winnerCar=winnerRow<end ? gv(G, winnerRow, KO.winner.col) : '';
     var fm=rounds['F'];
@@ -255,7 +260,7 @@
   function renderBracket(catData){
     var bracket=el('lbBracket');
     if(!catData||!Object.keys(catData.rounds).length){
-      bracket.innerHTML='<div style="padding:20px;color:var(--muted);font-family:var(--font-mono);font-size:12px;">No knockout data for this class.</div>'; return; }
+      bracket.innerHTML='<div class="lb__bempty">No knockout data for this class.</div>'; return; }
     var ROUND_LABELS={R16:'Round of 16',QF:'Quarter-Finals',SF:'Semi-Finals',F:'Finals'};
     var ROUNDS=['R16','QF','SF','F'], html='';
     ROUNDS.forEach(function(rk){
