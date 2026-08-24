@@ -6,6 +6,24 @@
 
   var FETCH_RANGE = 'A1:U240';
 
+  /* Knockout brackets are read from a SECOND fetch that starts below both the
+     qualifying block and the Fastest Qualifying table, because gviz infers one
+     type per column across whatever range it is asked for and returns null for
+     every cell that does not match. Each bracket time column shares its column
+     with numbers higher up the tab — D with the qualifying positions, H and L
+     likewise — so over A1:U240 gviz types them as numbers and silently drops the
+     times, which are text. That also empties whole rows, which gviz then drops
+     as well, shifting every offset below.
+
+     Row 60 is below the last of those numeric blocks and above the first
+     bracket. Verified against all 18 archived events: D, H, L and P all type as
+     string, all four "Knockouts" headers survive, and no event loses a time
+     (many gain — SF goes 0 -> 4-12, and QF recovers on several tabs). Do not
+     raise this without re-checking: too high clips the first bracket, too low
+     lets the numbers back in and re-types the column. parseEvent falls back to
+     the full grid if this range turns out to have clipped a bracket. */
+  var KO_RANGE = 'A60:U240';
+
   var HEATS = { heatCol:0, runLabels:['Qualifying 1','Qualifying 2','Qualifying 3','Qualifying 4'],
     blocks:[ {num:2,driver:3,time:4}, {num:7,driver:8,time:9}, {num:12,driver:13,time:14}, {num:17,driver:18,time:19} ] };
 
@@ -346,7 +364,7 @@
   }
   Array.prototype.forEach.call(el('lbTabs').children, function(b){ b.addEventListener('click',function(){ setView(+b.dataset.view); }); });
 
-  function render(G){
+  function render(G, GK){
     carNames={};
     var heatsHdr = findRow(G, 0, function(row){ return rowHasExact(row, 'qualifying 1'); });
     var fastTitle = findRow(G, 0, function(row){ return row.some(function(v){ return /^fastest qualifying/i.test(String(v).trim()); }); });
@@ -369,10 +387,25 @@
     renderOverall(deriveOverall(runs));
     renderHeats(runs);
 
-    knockoutData = koHeaders
+    /* Brackets come from the KO_RANGE grid so the semi-final times in column L
+       survive gviz's per-column type inference. It is a different fetch with its
+       own row numbering, so the "Knockouts" headers are located again inside it;
+       the koHeaders scanned above stay in G's coordinates and keep bounding the
+       qualifying section. Falls back to G if that second fetch failed. */
+    var K = G, koHeadersK = koHeaders;
+    if(GK && GK.length){
+      var hk=[];
+      for(var kr=0;kr<GK.length;kr++){ if(/^knockouts/i.test(String((GK[kr]||[])[0]||'').trim())) hk.push(kr); }
+      // Only trust the narrower grid if it still covers every bracket. If its
+      // start row has clipped one, fall back to the full grid: stale times beat
+      // a missing class.
+      if(hk.length>=koHeaders.length){ K=GK; koHeadersK=hk; }
+    }
+
+    knockoutData = koHeadersK
       .map(function(hr,i){
-        var end = i+1<koHeaders.length ? koHeaders[i+1] : G.length;
-        return parseKO(G, hr+1, knockoutName(G, hr+1, i), end);
+        var end = i+1<koHeadersK.length ? koHeadersK[i+1] : K.length;
+        return parseKO(K, hr+1, knockoutName(K, hr+1, i), end);
       })
       .filter(function(c){ return Object.keys(c.rounds).length; });
     buildCatButtons();
@@ -453,12 +486,18 @@
   }
   function selectEvent(ev, replaceUrl){
     setUrl(BASE_PATH+'/'+eventSlug(ev), replaceUrl);
-    if(cache[ev.tab]){ render(cache[ev.tab]); enterDetail(ev); return; }
+    if(cache[ev.tab]){ render(cache[ev.tab].G, cache[ev.tab].GK); enterDetail(ev); return; }
     showOnly('loading');
-    gviz(ev.tab, FETCH_RANGE, function(rows){
-      if(rows===null){ showOnly('error'); return; }
-      var G=buildGrid(rows); cache[ev.tab]=G; render(G); enterDetail(ev);
-    });
+    // Two ranges in parallel: the full tab for qualifying, and KO_RANGE for the
+    // brackets. Losing the second one only costs the SF times, so it is not fatal.
+    var pending=2, gMain=null, gKo=null, failed=false;
+    function done(){
+      if(--pending) return;
+      if(failed||gMain===null){ showOnly('error'); return; }
+      cache[ev.tab]={G:gMain, GK:gKo}; render(gMain, gKo); enterDetail(ev);
+    }
+    gviz(ev.tab, FETCH_RANGE, function(rows){ if(rows===null) failed=true; else gMain=buildGrid(rows); done(); });
+    gviz(ev.tab, KO_RANGE,    function(rows){ gKo = rows===null ? null : buildGrid(rows); done(); });
   }
 
   var MONTHS={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};

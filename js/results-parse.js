@@ -85,7 +85,7 @@ window.VRResults = (function(){
   function rowHasExact(row, text){ for(var c=0;c<row.length;c++){ if(String(row[c]||'').trim().toLowerCase()===text) return true; } return false; }
 
   // Parse one event grid → { overall:[{num,driver,ms,round,class}], knockouts:[{name,rounds}], classList }
-  function parseEvent(G){
+  function parseEvent(G, GK){
     var carNames={}, classMap={}, classList=[];
     function classOf(driver){ return classMap[norm(driver)]||''; }
 
@@ -133,9 +133,9 @@ window.VRResults = (function(){
       order.sort(function(a,b){return a.localeCompare(b);});
       classList=order;
     }
-    function knockoutName(O, i){
+    function knockoutName(K, O, i){
       for(var r=O-1; r>=0 && r>O-6; r--){
-        var a=gv(G,r,0);
+        var a=gv(K,r,0);
         if(/^knockouts/i.test(a)){
           var raw=a.replace(/^knockouts/i,'').trim();
           if(/jr/i.test(raw)) return 'BimmaCup Jr.';
@@ -147,13 +147,13 @@ window.VRResults = (function(){
       }
       return KO_NAMES[i] || ('Class '+(i+1));
     }
-    function parseKO(O, name, end){
-      if(end==null) end=G.length;
+    function parseKO(K, O, name, end){
+      if(end==null) end=K.length;
       var EMPTY={car:'',driver:'',time:''};
       var slot=function(rr,c){ var R=O+rr; if(R>=end) return EMPTY;
-        var car=gv(G,R,c), driver=gv(G,R,c+1);
+        var car=gv(K,R,c), driver=gv(K,R,c+1);
         if(car&&!driver&&carNames[car]) driver=carNames[car];
-        return {car:car, driver:driver, time:gv(G,R,c+2)}; };
+        return {car:car, driver:driver, time:gv(K,R,c+2)}; };
       var rounds={};
       ['R16','QF','SF','F'].forEach(function(rk){
         var col=KO.carCol[rk];
@@ -162,7 +162,7 @@ window.VRResults = (function(){
         if(filled.length) rounds[rk]=filled;
       });
       var winnerRow=O+KO.winner.row;
-      var winnerCar=winnerRow<end ? gv(G, winnerRow, KO.winner.col) : '';
+      var winnerCar=winnerRow<end ? gv(K, winnerRow, KO.winner.col) : '';
       var fm=rounds['F'];
       if(fm&&fm.length){ var f=fm[0];
         if(winnerCar){ f.slot1.winner=f.slot1.car===winnerCar; f.slot2.winner=f.slot2.car===winnerCar; }
@@ -187,9 +187,21 @@ window.VRResults = (function(){
     }
 
     var overall = deriveOverall(runs).map(function(d){ d.class = classOf(d.driver); return d; });
-    var knockouts = koHeaders.map(function(hr,i){
-      var end = i+1<koHeaders.length ? koHeaders[i+1] : G.length;
-      return parseKO(hr+1, knockoutName(hr+1, i), end);
+    /* Brackets are read from the KO_RANGE grid when it is available, so the
+       semi-final times in column L survive gviz's per-column type inference —
+       see KO_RANGE. Separate fetch, separate row numbering, so its "Knockouts"
+       headers are located again inside it. */
+    var K = G, koHeadersK = koHeaders;
+    if(GK && GK.length){
+      var hk=[];
+      for(var kr=0;kr<GK.length;kr++){ if(/^knockouts/i.test(String((GK[kr]||[])[0]||'').trim())) hk.push(kr); }
+      // Only trust the narrower grid if it still covers every bracket.
+      if(hk.length>=koHeaders.length){ K=GK; koHeadersK=hk; }
+    }
+
+    var knockouts = koHeadersK.map(function(hr,i){
+      var end = i+1<koHeadersK.length ? koHeadersK[i+1] : K.length;
+      return parseKO(K, hr+1, knockoutName(K, hr+1, i), end);
     }).filter(function(c){ return Object.keys(c.rounds).length; });
 
     return { overall: overall, knockouts: knockouts, classList: classList };
@@ -201,6 +213,16 @@ window.VRResults = (function(){
      parsing. (js/previous.js keeps its own copy — it predates this module and
      is left untouched.) */
   var FETCH_RANGE = 'A1:U240';
+
+  /* Second range, used only for the knockout brackets. gviz infers one type per
+     column across the requested range and returns null for every cell that does
+     not match it. Every bracket time column (D for R16, H for QF, L for SF)
+     shares its column with numbers higher up the tab — finishing positions and
+     the Fastest Qualifying table — so over A1:U240 they type as numbers and the
+     times, being text, are silently dropped. Starting below those blocks leaves
+     only times in them. Mirrors KO_RANGE in js/previous.js; see there for the
+     row-60 reasoning and the verification across all 18 archived events. */
+  var KO_RANGE = 'A60:U240';
   var _seq = 0;
 
   function gviz(wb, tab, range, cb){
@@ -312,11 +334,19 @@ window.VRResults = (function(){
       if(!total){ cb(events); return; }
       if(opts.onProgress) opts.onProgress(0,total);
       events.forEach(function(ev){
-        gviz(WB, ev.tab, FETCH_RANGE, function(tabRows){
-          ev.parsed = tabRows ? parseEvent(buildGrid(tabRows)) : { overall:[], knockouts:[] };
+        // Two ranges per event: the full tab, plus KO_RANGE for the brackets.
+        // The event is only parsed once both have landed; losing the second one
+        // costs the SF times but nothing else.
+        var mainRows=null, koRows=null, left=2;
+        function ready(){
+          if(--left) return;
+          ev.parsed = mainRows ? parseEvent(buildGrid(mainRows), koRows?buildGrid(koRows):null)
+                               : { overall:[], knockouts:[] };
           got++; if(opts.onProgress) opts.onProgress(got,total);
           if(got===total) cb(events);
-        });
+        }
+        gviz(WB, ev.tab, FETCH_RANGE, function(rows){ mainRows=rows; ready(); });
+        gviz(WB, ev.tab, KO_RANGE,    function(rows){ koRows=rows;   ready(); });
       });
     });
   }
