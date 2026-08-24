@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-C3SKHBHP2S"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-C3SKHBHP2S');
+  </script>
+
+  <title>Tuning in Progress | Vaucluse Raceway</title>
+  <meta name="description" content="Vaucluse Raceway live results are being tuned up — we'll be back on track shortly.">
+  <meta name="robots" content="noindex">
+  <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon.png?v=10">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png?v=10">
+
+  <link rel="preload" href="/fonts/racing-sans-one-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/css/tokens.css?v=21">
+
+  <style>
+    *{box-sizing:border-box;}
+    body{
+      margin:0; min-height:100vh; display:flex; flex-direction:column;
+      align-items:center; justify-content:center; gap:34px; padding:40px 24px;
+      font-family:var(--vr-font-body); color:var(--vr-ink-2); text-align:center;
+      background:
+        radial-gradient(120% 90% at 50% -10%, rgba(2,174,238,.10), transparent 60%),
+        radial-gradient(90% 70% at 50% 110%, rgba(241,89,42,.10), transparent 60%),
+        var(--vr-white);
+    }
+
+    .tn-logo img{height:74px; width:auto; display:block;}
+    @media(max-width:560px){ .tn-logo img{height:58px;} }
+
+    .tn-card{max-width:620px;}
+    .tn-eyebrow{
+      font-family:var(--vr-font-head); font-weight:700; text-transform:uppercase;
+      letter-spacing:.18em; font-size:12px; color:var(--vr-grey-2); margin:0 0 14px;
+    }
+    .tn-title{
+      font-family:var(--vr-font-display); font-weight:400; color:var(--vr-blue-deep);
+      font-size:clamp(38px,7vw,68px); line-height:1.02; margin:0;
+    }
+    .tn-title span{color:var(--vr-orange);}
+    .tn-copy{
+      font-size:17px; line-height:1.6; color:var(--vr-grey-2);
+      margin:18px auto 0; max-width:44ch;
+    }
+
+    /* Rev-counter sweep: a needle running up and falling back, the way a car
+       sounds on the dyno. Purely decorative. */
+    .tn-dyno{
+      width:min(420px,100%); height:8px; margin:34px auto 0;
+      border-radius:99px; background:var(--vr-grey); overflow:hidden; position:relative;
+    }
+    .tn-dyno__bar{
+      position:absolute; inset:0 auto 0 0; width:40%; border-radius:99px;
+      background:linear-gradient(90deg,var(--vr-blue),var(--vr-orange));
+      animation:tnrev 2.4s cubic-bezier(.55,0,.35,1) infinite;
+    }
+    @keyframes tnrev{
+      0%{transform:translateX(-100%);}
+      55%{transform:translateX(180%);}
+      56%{transform:translateX(-100%);}
+      100%{transform:translateX(-100%);}
+    }
+    .tn-dynolabel{
+      font-family:var(--vr-font-mono); font-size:11px; letter-spacing:.16em;
+      text-transform:uppercase; color:var(--vr-grey-2); margin:12px 0 0;
+    }
+    @media(prefers-reduced-motion:reduce){
+      .tn-dyno__bar{animation:none; width:100%;}
+    }
+
+    .tn-actions{display:flex; flex-wrap:wrap; gap:12px; justify-content:center; margin-top:32px;}
+    .tn-btn{
+      display:inline-flex; align-items:center; gap:8px;
+      font-family:var(--vr-font-btn); font-weight:700; font-size:13px; letter-spacing:.04em;
+      text-transform:uppercase; text-decoration:none;
+      padding:13px 26px; border-radius:2.5rem; border:2px solid transparent;
+      transition:background .2s, border-color .2s, color .2s;
+    }
+    .tn-btn--primary{background:var(--vr-orange); color:var(--vr-white);}
+    .tn-btn--primary:hover{background:var(--vr-blue-deep);}
+    .tn-btn--ghost{border-color:var(--vr-grey); color:var(--vr-blue-deep);}
+    .tn-btn--ghost:hover{border-color:var(--vr-orange); color:var(--vr-orange);}
+
+    .tn-credit{
+      font-size:12px; color:var(--vr-grey-2); margin:0;
+    }
+    .tn-credit a{color:var(--vr-grey-2);}
+    .tn-credit a:hover{color:var(--vr-orange);}
+  </style>
+</head>
+<body>
+
+  <a class="tn-logo" href="https://vaucluseraceway.com" aria-label="Vaucluse Raceway — main site">
+    <img src="/assets/vr-logo.svg" alt="Vaucluse Raceway" width="188" height="68">
+  </a>
+
+  <main class="tn-card">
+    <h1 class="tn-title">Tuning in <span>Progress</span></h1>
+    
+
+    <div class="tn-actions">
+      <a class="tn-btn tn-btn--primary" href="https://vaucluseraceway.com">Main Site</a>
+      <a class="tn-btn tn-btn--ghost" href="https://www.whatsapp.com/channel/0029VbCVcLH2ZjCkxisZTd0l" target="_blank" rel="noopener">Get Updates</a>
+    </div>
+  </main>
+
+  <p class="tn-credit">Site Designed and Developed By <a href="https://www.emdesignsbb.com" target="_blank" rel="noopener">EMDesigns</a></p>
+
+</body>
+</html>
