@@ -243,6 +243,8 @@
 .lb__bround:not(:last-child) .lb__bpair:not(.single)::before{
   content:''; position:absolute; right:-28px; top:50%; width:14px; border-top:2px solid var(--line);}
 
+.lb__bempty{padding:20px; color:var(--muted); font-family:var(--font-mono); font-size:12px;}
+
 .lb__bmatch{display:flex; flex-direction:column; gap:3px; padding:0 0 0 10px; position:relative;}
 .lb__bmatch .lb__bmatchlabel{font-family:var(--font-mono); font-size:10px; color:var(--muted);
   letter-spacing:.08em; padding-left:2px; margin-bottom:2px;}
