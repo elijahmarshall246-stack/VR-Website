@@ -296,15 +296,33 @@
       const getVal=(r,c)=>{ if(c==null) return ''; const cell=rows[r]&&rows[r].c&&rows[r].c[c]; if(!cell) return ''; return noErr(cell.f!=null?cell.f:(cell.v!=null?String(cell.v):'')); };
       const runs=h.runLabels.map(l=>({label:l, heats:[]}));
       let curHeat=''; const rowsByHeat={};
+      /* The heat-number column is only authoritative while it still lines up
+         with the entry rows — one number on the first row of each heat, carried
+         down to the rest. A regenerated sheet can leave that column offset, with
+         the numbers sitting on blank rows below the entry list; every entry row
+         then failed the `!curHeat` guard below, the parse returned nothing and
+         the whole board went blank. Fall back to numbering heats by position in
+         that case: heats are fixed blocks of entriesPerHeat consecutive rows, so
+         a well-formed sheet produces exactly the same grouping either way. */
+      const rowHasEntry=r=>h.blocks.some(b=>
+        String(getVal(r,b.driver)||'').trim()||String(getVal(r,b.num)||'').trim());
+      let heatColOk=false;
+      for(let r=0;r<rows.length;r++){
+        if(String(getVal(r,h.heatCol)||'').trim()&&rowHasEntry(r)){ heatColOk=true; break; }
+      }
+      const perHeat=Math.max(1,h.entriesPerHeat||2);
+      const seen={};
       for(let r=0;r<rows.length;r++){
         const hn=String(getVal(r,h.heatCol)||'').trim(); if(hn) curHeat=hn;
-        if(!curHeat) continue;
+        if(heatColOk&&!curHeat) continue;
         h.blocks.forEach((b,bi)=>{
           const num=String(getVal(r,b.num)||'').trim(), drv=String(getVal(r,b.driver)||'').trim();
           if(!drv&&!num) return;
-          if(!rowsByHeat[bi]) rowsByHeat[bi]={};
-          if(!rowsByHeat[bi][curHeat]) rowsByHeat[bi][curHeat]=[];
-          rowsByHeat[bi][curHeat].push({num,driver:drv,ms:parseTime(getVal(r,b.time))});
+          if(!rowsByHeat[bi]){ rowsByHeat[bi]={}; seen[bi]=0; }
+          const key=heatColOk?curHeat:String(Math.floor(seen[bi]/perHeat)+1);
+          seen[bi]++;
+          if(!rowsByHeat[bi][key]) rowsByHeat[bi][key]=[];
+          rowsByHeat[bi][key].push({num,driver:drv,ms:parseTime(getVal(r,b.time))});
         });
       }
       h.blocks.forEach((b,bi)=>{ const map=rowsByHeat[bi]||{};
