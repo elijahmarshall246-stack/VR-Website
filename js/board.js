@@ -153,7 +153,7 @@
   const SENTINEL_MS = 30*60000;   
 
   /* ===== TIME HELPERS ===== */
-  function parseTime(v){
+  function parseTimeRaw(v){
     if(v==null||v==='') return null;
     if(typeof v==='number'&&!isNaN(v)) return Math.round(v*1000);
     const s=String(v).trim(); if(!s||/^(dnf|dns|dsq|—|-)$/i.test(s)) return null;
@@ -165,6 +165,17 @@
     else sec=+p[0];
     return ((min*60)+sec)*1000+ms;
   }
+  /* A lap can never take zero time. When the timing gear faults it writes
+     0:00:000, which would otherwise sort straight to the top of the leaderboard
+     and stand as the fastest lap on record — it did exactly that at one event.
+     Treat any non-positive result as no time at all; every caller already
+     handles null, so this one guard covers sorting, records, personal bests and
+     the bracket ADV/winner comparisons at once. */
+  function parseTime(v){ const n=parseTimeRaw(v); return (typeof n==='number'&&isFinite(n)&&n>0) ? n : null; }
+  /* The raw cell text is rendered verbatim in brackets, so a zero time has to be
+     recognised there too — "0:00:000", "00:00.000", "0". Kept separate from
+     parseTime so genuine DNF/DNS text still shows. */
+  function isZeroTime(v){ const s=String(v==null?'':v).trim(); return /^[0:.]+$/.test(s) && s.indexOf('0')>=0; }
   function fmtTime(ms){ if(ms==null) return '—'; let t=Math.round(ms);
     const m=Math.floor(t/60000); t-=m*60000; const s=Math.floor(t/1000), mm=t-s*1000;
     return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')+':'+String(mm).padStart(3,'0'); }
@@ -298,9 +309,19 @@
       }
       h.blocks.forEach((b,bi)=>{ const map=rowsByHeat[bi]||{};
         Object.keys(map).forEach(hn=>runs[bi].heats.push({heat:hn,entries:map[hn]})); });
-      // A run the sheet has no rows for (e.g. Qualifying 4 at an event that only
-      // runs three) is dropped so it never renders as an empty column.
-      cb(runs.filter(run=>run.heats.length));
+      /* Every run needs rows to earn a column. The LAST run — Qualifying 4 —
+         additionally needs at least one actual time: the sheet is usually
+         pre-loaded with the full entry list, so at an event that only runs three
+         rounds it had names in it from the start and rendered as a permanently
+         blank column.
+
+         The extra condition is deliberately limited to the last run. Q1-Q3 show
+         as soon as they have rows, so a round that is staging or part-way
+         through its first heat is never hidden. Live board only — past events
+         and stats keep the rows-only rule for every round. */
+      const lastRun=h.runLabels.length-1;
+      cb(runs.filter((run,i)=>run.heats.length &&
+        (i!==lastRun || run.heats.some(ht=>ht.entries.some(e=>e.ms!=null)))));
     };
     script.onerror=function(){ delete window[cbName]; script.remove();
       el('lbErr').textContent='Could not reach data'; hideLoading(); markUpdated(false,false); };
@@ -492,6 +513,9 @@
       const cell=row.c[c]; return noErr(String(cell.f!=null?cell.f:(cell.v!=null?cell.v:'')).trim());
     }
     function colShift(ref,n){ const p=cellToIndex(ref); if(!p) return ''; return colLetter(p.col+n)+(p.row+1); }
+    // Bracket slots print their time cell verbatim, so a faulted 0:00:000 has to
+    // be blanked here as well as ignored by parseTime.
+    function slotTime(ref){ const v=readCell(colShift(ref,2)); return isZeroTime(v) ? '' : v; }
     function cellText(row,c){ return c==null?'':String(c.f!=null?c.f:(c.v!=null?c.v:'')).trim(); }
 
     loadOneRound(catCfg.gid, table=>{
@@ -522,8 +546,8 @@
       ROUND_KEYS.forEach(rk=>{
         const defs=catCfg.rounds[rk]; if(!Array.isArray(defs)) return;
         roundResults[rk]=defs.map(d=>({match:d.match,
-          slot1:{car:readCell(d.slot1), driver:readCell(colShift(d.slot1,1)), time:readCell(colShift(d.slot1,2))},
-          slot2:{car:readCell(d.slot2), driver:readCell(colShift(d.slot2,1)), time:readCell(colShift(d.slot2,2))}}));
+          slot1:{car:readCell(d.slot1), driver:readCell(colShift(d.slot1,1)), time:slotTime(d.slot1)},
+          slot2:{car:readCell(d.slot2), driver:readCell(colShift(d.slot2,1)), time:slotTime(d.slot2)}}));
       });
 
       let winnerCar='';

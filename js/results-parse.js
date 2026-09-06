@@ -63,7 +63,7 @@ window.VRResults = (function(){
     return cur;
   }
 
-  function parseTime(v){
+  function parseTimeRaw(v){
     if(v==null||v==='') return null;
     if(typeof v==='number'&&!isNaN(v)) return Math.round(v*1000);
     var s=String(v).trim(); if(!s||/^(dnf|dns|dsq|—|-)$/i.test(s)) return null;
@@ -75,6 +75,15 @@ window.VRResults = (function(){
     else sec=+p[0];
     return ((min*60)+sec)*1000+ms;
   }
+  /* A lap can never take zero time. When the timing gear faults it writes
+     0:00:000, which would otherwise sort straight to the top of the leaderboard
+     and stand as the fastest lap on record. Treat any non-positive result as no
+     time at all; every caller already handles null, so this one guard covers
+     sorting, records, personal bests and the bracket winner comparisons. */
+  function parseTime(v){ var n=parseTimeRaw(v); return (typeof n==='number'&&isFinite(n)&&n>0) ? n : null; }
+  /* The raw cell text is rendered verbatim in brackets, so a zero time has to be
+     recognised there too. Kept separate from parseTime so DNF/DNS still shows. */
+  function isZeroTime(v){ var s=String(v==null?'':v).trim(); return /^[0:.]+$/.test(s) && s.indexOf('0')>=0; }
   function fmtTime(ms){ if(ms==null) return '—'; var t=Math.round(ms);
     var m=Math.floor(t/60000); t-=m*60000; var s=Math.floor(t/1000), mm=t-s*1000;
     return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')+':'+String(mm).padStart(3,'0'); }
@@ -153,7 +162,8 @@ window.VRResults = (function(){
       var slot=function(rr,c){ var R=O+rr; if(R>=end) return EMPTY;
         var car=gv(K,R,c), driver=gv(K,R,c+1);
         if(car&&!driver&&carNames[car]) driver=carNames[car];
-        return {car:car, driver:driver, time:gv(K,R,c+2)}; };
+        var tm=gv(K,R,c+2);
+        return {car:car, driver:driver, time:isZeroTime(tm)?'':tm}; };
       var rounds={};
       ['R16','QF','SF','F'].forEach(function(rk){
         var col=KO.carCol[rk];
