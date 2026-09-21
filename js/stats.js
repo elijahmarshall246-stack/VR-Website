@@ -143,8 +143,10 @@
     return '<div class="vr-stat-card'+(wide?' vr-stat-card--wide':'')+'">'+
       '<div class="vr-stat-card__title">'+esc(title)+'</div>'+inner+'</div>';
   }
+  // Event + date line, shared by the overall hero and the per-class records.
+  function recMeta(rec){ return esc([rec.event, rec.date].filter(Boolean).join(' · ')); }
   function heroSlide(variant, label, rec, showClass){
-    var meta=esc([rec.event, rec.date].filter(Boolean).join(' · '));
+    var meta=recMeta(rec);
     return '<div class="vr-stat-hero vr-stat-hero--'+variant+'">'+
       '<div class="vr-stat-hero__label">'+esc(label)+'</div>'+
       '<div class="vr-stat-hero__time">'+esc(VRR.fmtTime(rec.ms))+'</div>'+
@@ -179,10 +181,11 @@
     var classNames=Object.keys(S.fastestByClass).sort(classSort);
     var byClass = classNames.length
       ? '<div class="vr-stat-classgrid">'+classNames.map(function(cn){
-          var r=S.fastestByClass[cn];
+          var r=S.fastestByClass[cn], meta=recMeta(r);
           return '<div class="vr-stat-classrec"><div class="vr-stat-classrec__cls">'+esc(cn)+'</div>'+
             '<div class="vr-stat-classrec__time">'+esc(VRR.fmtTime(r.ms))+'</div>'+
-            '<div class="vr-stat-classrec__who">'+esc(r.driver||'—')+'</div></div>';
+            '<div class="vr-stat-classrec__who">'+esc(r.driver||'—')+'</div>'+
+            (meta?'<div class="vr-stat-classrec__meta">'+meta+'</div>':'')+'</div>';
         }).join('')+'</div>'
       : '<div class="vr-stat-empty">No class times yet.</div>';
 
