@@ -301,20 +301,19 @@ window.VRResults = (function(){
     { key:'stagerally',         label:'Stage Rally'         },
   ];
 
-  // loadEvents({onProgress:fn(done,total)}, cb) -> cb(events|null)
-  // Each event: {name, tab, type, date, dateMs, year, slug, parsed}
-  function loadEvents(opts, cb){
-    opts=opts||{};
+  // loadIndex(cb) -> cb(events|null): the Index tab only, newest first, no
+  // per-event fetches. Each event: {name, tab, type, date, dateMs, year, slug}
+  function loadIndex(cb){
     var CFG=(window.VR_CONFIG&&window.VR_CONFIG.previous)||{};
-    var COLS=CFG.indexColumns||{}, WB=CFG.workbookId||'';
+    var COLS=CFG.indexColumns||{}, WB=CFG.workbookId||"";
     if(!WB||/^TODO/i.test(WB)){ cb(null); return; }
 
-    gviz(WB, CFG.indexTabName||'Index', '', function(rows){
+    gviz(WB, CFG.indexTabName||"Index", "", function(rows){
       if(rows===null||!rows.length){ cb(rows===null?null:[]); return; }
       var header=(rows[0].c||[]).map(function(c){ return norm(cellVal(c)); });
       var idx=function(n){ return header.indexOf(norm(n)); };
-      var iName=idx(COLS.eventName||'EventName'), iType=idx(COLS.eventType||'EventType'),
-          iDate=idx(COLS.date||'Date'), iTab=idx(COLS.tabName||'TabName');
+      var iName=idx(COLS.eventName||"EventName"), iType=idx(COLS.eventType||"EventType"),
+          iDate=idx(COLS.date||"Date"), iTab=idx(COLS.tabName||"TabName");
       if(iName<0||iTab<0){ cb(null); return; }
 
       var events=[];
@@ -324,12 +323,12 @@ window.VRResults = (function(){
         if(!name||!tab) continue;
         var dm = iDate>=0?dateMsOf(c[iDate]):NaN;
         if(isNaN(dm)) dm = scanDate(c);
-        var dstr = iDate>=0?cellVal(c[iDate]).trim():'';
+        var dstr = iDate>=0?cellVal(c[iDate]).trim():"";
         var yr = !isNaN(dm) ? new Date(dm).getFullYear()
-                            : (dstr.match(/\b(?:19|20)\d{2}\b/)||[null])[0];
+                            : (dstr.match(/(?:19|20)d{2}/)||[null])[0];
         if(yr!=null) yr=+yr;
         var ev={ name:name, tab:tab,
-          type: iType>=0?cellVal(c[iType]).trim():'',
+          type: iType>=0?cellVal(c[iType]).trim():"",
           date: dstr, dateMs: dm, year: yr };
         ev.slug=eventSlug(ev);
         events.push(ev);
@@ -339,7 +338,17 @@ window.VRResults = (function(){
         if(isNaN(a.dateMs)) return 1; if(isNaN(b.dateMs)) return -1;
         return b.dateMs-a.dateMs;
       });
+      cb(events);
+    });
+  }
 
+  // loadEvents({onProgress:fn(done,total)}, cb) -> cb(events|null)
+  // Each event: {name, tab, type, date, dateMs, year, slug, parsed}
+  function loadEvents(opts, cb){
+    opts=opts||{};
+    var WB=(((window.VR_CONFIG||{}).previous)||{}).workbookId||"";
+    loadIndex(function(events){
+      if(!events){ cb(events); return; }
       var total=events.length, got=0;
       if(!total){ cb(events); return; }
       if(opts.onProgress) opts.onProgress(0,total);
@@ -406,6 +415,7 @@ window.VRResults = (function(){
     driverKey: driverKey,
     betterName: betterName,
     loadEvents: loadEvents,
+    loadIndex: loadIndex,
     eventSlug: eventSlug,
     DISCIPLINES: DISCIPLINES,
   };

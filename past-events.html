@@ -22,11 +22,11 @@
   <link rel="preload" href="fonts/racing-sans-one-400.woff2" as="font" type="font/woff2" crossorigin>
 
   <link rel="stylesheet" href="css/tokens.css?v=21">
-  <link rel="stylesheet" href="css/shell.css?v=31">
+  <link rel="stylesheet" href="css/shell.css?v=42">
   <link rel="stylesheet" href="css/board.css?v=26">
 
   <script defer src="config.js?v=20"></script>
-  <script defer src="js/shell.js?v=21"></script>
+  <script defer src="js/shell.js?v=31"></script>
   <script defer src="js/previous.js?v=27"></script>
   <script defer src="js/qualtabs.js?v=20"></script>
 </head>
@@ -34,35 +34,51 @@
 
   <header class="vr-header">
     <div class="vr-header__inner">
-      <a class="vr-logo" href="https://vaucluseraceway.com" aria-label="Vaucluse Raceway — main site">
-        <img src="assets/vr-logo.svg" alt="Vaucluse Raceway" width="188" height="68">
+      <a class="vr-logo" href="https://vaucluseraceway.com/" aria-label="Vaucluse Raceway home">
+        <img src="/assets/vr-logo.svg" alt="Vaucluse Raceway" width="188" height="68">
       </a>
-      <nav class="vr-headnav" id="vrPagenav" aria-label="Results sections">
-        <a class="vr-pagenav__link" href="/happening-now"><span class="vr-livedot" aria-hidden="true"></span>Happening Now</a>
-        <a class="vr-pagenav__link is-active" href="/past-events" aria-current="page">Past Events</a>
-        <div class="vr-navdrop" data-navdrop>
-          <button type="button" class="vr-pagenav__link vr-navdrop__trigger" aria-haspopup="true" aria-expanded="false">Stats <span class="vr-navdrop__caret" aria-hidden="true">▾</span></button>
-          <div class="vr-navdrop__menu" role="menu">
-            <a class="vr-navdrop__item" href="/stats" role="menuitem">Stats</a>
-            <a class="vr-navdrop__item" href="/stats/drivers" role="menuitem">Drivers</a>
-          </div>
-        </div>
+      <nav class="vr-mainnav" aria-label="Main site">
+        <a class="vr-mainnav__link" href="https://vaucluseraceway.com/">Home</a>
+        <a class="vr-mainnav__link" href="https://vaucluseraceway.com/#about">About</a>
+        <a class="vr-mainnav__link is-current" href="https://results.vaucluseraceway.com/">Results</a>
+        <a class="vr-mainnav__link" href="https://vaucluseraceway.com/#bimmacup">BimmaCup</a>
+        <a class="vr-mainnav__link" href="https://vaucluseraceway.com/#contact">Contact</a>
       </nav>
-      <nav class="vr-nav" aria-label="Main site">
-        <a class="vr-nav__main" href="https://vaucluseraceway.com">Home</a>
-      </nav>
+      <div class="vr-weather" id="vrWeather" role="group" aria-label="Current weather at Vaucluse Raceway">
+        <div class="vwr-labels"><div class="vwr-l1">Vaucluse Raceway</div><div class="vwr-l2">Current weather</div></div>
+        <div class="vwr-right"><div class="vwr-icon" id="vrWeatherIcon" aria-hidden="true"></div><div class="vwr-t" id="vrWeatherTemp">--°C</div></div>
+      </div>
     </div>
   </header>
+
+  <nav class="vr-subnav" id="vrPagenav" aria-label="Results sections">
+    <div class="vr-subnav__inner">
+      <a class="vr-pagenav__link" href="/">Results Home</a>
+      <a class="vr-pagenav__link" href="/happening-now"><span class="vr-livedot" aria-hidden="true"></span>Happening Now</a>
+      <a class="vr-pagenav__link is-active" aria-current="page" href="/past-events">Past Events</a>
+      <div class="vr-navdrop" data-navdrop>
+        <button type="button" class="vr-pagenav__link vr-navdrop__trigger" aria-haspopup="true" aria-expanded="false">Stats <span class="vr-navdrop__caret" aria-hidden="true">▾</span></button>
+        <div class="vr-navdrop__menu" role="menu">
+          <a class="vr-navdrop__item" href="/stats" role="menuitem">Stats</a>
+          <a class="vr-navdrop__item" href="/stats/drivers" role="menuitem">Drivers</a>
+        </div>
+      </div>
+    </div>
+  </nav>
 
   <button id="hamburger-btn" aria-label="Open menu" aria-controls="mobile-menu" aria-expanded="false">
     <span></span><span></span><span></span>
   </button>
   <nav id="mobile-menu" aria-label="Mobile menu">
-    <a href="/happening-now">Happening Now</a>
-    <a class="is-active" href="/past-events" aria-current="page">Past Events</a>
-    <a href="/stats">Stats</a>
+    <a href="https://vaucluseraceway.com/">Home</a>
+    <a href="https://vaucluseraceway.com/#about">About</a>
+    <a href="/">Results</a>
+    <a class="vr-mobile-sub" href="/happening-now">Happening Now</a>
+    <a class="vr-mobile-sub is-active" aria-current="page" href="/past-events">Past Events</a>
+    <a class="vr-mobile-sub" href="/stats">Stats</a>
     <a class="vr-mobile-sub" href="/stats/drivers">Drivers</a>
-    <a href="https://vaucluseraceway.com">Home</a>
+    <a href="https://vaucluseraceway.com/#bimmacup">BimmaCup</a>
+    <a href="https://vaucluseraceway.com/#contact">Contact</a>
   </nav>
 
   <main class="vr-main">
