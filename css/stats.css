@@ -214,7 +214,8 @@
 
 /* Full driver-stats page --------------------------------------------------- */
 .vr-dstat-page__title{
-  font-family:var(--vr-font-display); font-size:clamp(30px,6vw,48px); line-height:1;
+  font-family:var(--vr-font-heading); font-weight:700; letter-spacing:-0.025rem; text-transform:uppercase;
+  font-size:clamp(28px,5vw,44px); line-height:1.125;
   text-align:center; margin:0 0 12px; color:var(--vr-ink);
 }
 .vr-dstat-page__title em{font-style:italic; color:var(--vr-orange);}

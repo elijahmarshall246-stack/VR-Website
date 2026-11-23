@@ -17,6 +17,8 @@
   --vr-grey-2:#666672;
   --vr-white:#FFFFFF;
 
+  /* Headings match the main site (vaucluseraceway.com #text01): bold Arial, uppercase, tight tracking */
+  --vr-font-heading:'Arial','Helvetica Neue',Helvetica,sans-serif;
   --vr-font-display:'Racing Sans One',system-ui,sans-serif;
   --vr-font-head:'Arial',system-ui,sans-serif;
   --vr-font-btn:'Arial',system-ui,sans-serif;

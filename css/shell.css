@@ -163,7 +163,7 @@ body.vr-live .vr-livedot{display:inline-block; animation:vrlivepulse 1.6s ease-o
 
 .vr-hero{
   position:relative; color:#fff; overflow:hidden;
-  background:#0b1a24 url('../assets/footerpic1.JPG') center 42%/cover no-repeat;
+  background:#0b1a24 url('../assets/hero-track.jpg') 70% 78%/cover no-repeat;
 }
 .vr-hero::before{
   content:""; position:absolute; inset:0;
@@ -175,17 +175,18 @@ body.vr-live .vr-livedot{display:inline-block; animation:vrlivepulse 1.6s ease-o
   display:flex; flex-direction:column; align-items:flex-start; gap:18px;
 }
 .vr-hero__status{
-  display:inline-flex; align-items:center; font-size:13px; font-weight:700; letter-spacing:.04em;
+  display:none; align-items:center; font-size:13px; font-weight:700; letter-spacing:.04em;
   text-transform:uppercase; padding:7px 14px; border-radius:2rem;
   background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.22);
 }
-.vr-hero__status-live, .vr-hero__cta-live{display:none;}
+.vr-hero__cta-live{display:none;}
+body.vr-live .vr-hero__status{display:inline-flex;}
 body.vr-live .vr-hero__status{background:rgba(255,54,61,.18); border-color:rgba(255,54,61,.6);}
-body.vr-live .vr-hero__status-live, body.vr-live .vr-hero__cta-live{display:inline-flex; align-items:center;}
-body.vr-live .vr-hero__status-idle, body.vr-live .vr-hero__cta-idle{display:none;}
+body.vr-live .vr-hero__cta-live{display:inline-flex; align-items:center;}
+body.vr-live .vr-hero__cta-idle{display:none;}
 .vr-hero__title{
-  font-family:var(--vr-font-display); font-weight:400; text-transform:uppercase;
-  font-size:clamp(38px,7vw,76px); line-height:.95; margin:0; max-width:12ch;
+  font-family:'Arial Black','Arial Bold',Gadget,Arial,sans-serif; font-weight:900; letter-spacing:-0.025rem; text-transform:uppercase;
+  font-size:clamp(36px,6vw,68px); line-height:1.05; margin:0; max-width:12ch;
 }
 .vr-hero__title em{font-style:italic; color:var(--vr-orange);}
 .vr-hero__sub{font-size:clamp(15px,1.6vw,18px); line-height:1.55; color:rgba(255,255,255,.85); margin:0; max-width:520px;}
@@ -198,10 +199,10 @@ body.vr-live .vr-hero__status-idle, body.vr-live .vr-hero__cta-idle{display:none
 .vr-homesec__head{display:flex; align-items:baseline; justify-content:space-between; gap:16px; margin-bottom:18px;
   border-bottom:2px solid var(--vr-grey); padding-bottom:12px;}
 .vr-homesec__title{
-  font-family:var(--vr-font-display); font-weight:400; text-transform:uppercase;
-  font-size:clamp(24px,3vw,34px); line-height:1; margin:0; color:var(--vr-ink);
+  font-family:var(--vr-font-heading); font-weight:700; letter-spacing:-0.025rem; text-transform:uppercase;
+  font-size:clamp(24px,3vw,38px); line-height:1.125; margin:0; color:var(--vr-ink);
 }
-.vr-homesec__title em{font-style:italic; color:var(--vr-orange);}
+.vr-homesec__title em{font-style:normal; color:var(--vr-orange);}
 .vr-homesec__more{font-weight:700; font-size:13px; text-transform:uppercase; letter-spacing:.04em;
   color:var(--vr-blue-deep); text-decoration:none; white-space:nowrap;}
 .vr-homesec__more:hover{color:var(--vr-orange);}
@@ -274,8 +275,8 @@ body.vr-live .vr-hero__status-idle, body.vr-live .vr-hero__cta-idle{display:none
   color:var(--vr-orange); margin-bottom:8px;
 }
 .vr-pagehead h1, .vr-pagehead .vr-title{
-  font-family:var(--vr-font-display); font-weight:400; text-transform:uppercase;
-  font-size:clamp(20px,2.6vw,30px); line-height:1; color:var(--vr-ink); margin:0;
+  font-family:var(--vr-font-heading); font-weight:700; letter-spacing:-0.025rem; text-transform:uppercase;
+  font-size:clamp(20px,2.6vw,30px); line-height:1.125; color:var(--vr-ink); margin:0;
 }
 .vr-pagehead h1 em, .vr-title em{font-style:italic; color:var(--vr-orange); font-weight:400;}
 
@@ -311,8 +312,8 @@ body.vr-live .vr-hero__status-idle, body.vr-live .vr-hero__cta-idle{display:none
 }
 .vr-state.is-on{display:flex;}
 .vr-state__title{
-  font-family:var(--vr-font-display); font-weight:400; text-transform:uppercase;
-  font-size:clamp(22px,3vw,32px); color:var(--vr-ink); line-height:1;
+  font-family:var(--vr-font-heading); font-weight:700; letter-spacing:-0.025rem; text-transform:uppercase;
+  font-size:clamp(22px,3vw,32px); color:var(--vr-ink); line-height:1.125;
 }
 .vr-state__title em{font-style:italic; color:var(--vr-orange);}
 .vr-state__msg{font-size:15px; color:var(--vr-grey-2); max-width:440px;}
