@@ -5,8 +5,7 @@
 window.VRDriverStats = (function(){
   var VRR = window.VRResults;
 
-  var ROUND_KEYS   = ['R16','QF','SF','F'];
-  var ROUND_LABELS = ['R16','QF','SF'];          // index = ROUND_KEYS index, finals handled separately
+  function ordinal(n){ var s=['th','st','nd','rd'], v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); }
 
   function esc(s){ return String(s).replace(/[&<>"]/g,function(c){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
@@ -43,11 +42,7 @@ window.VRDriverStats = (function(){
       var P=ev.parsed||{};
       (P.overall||[]).forEach(function(d){ learn(d.num, d.driver); });
       (P.knockouts||[]).forEach(function(ko){
-        ROUND_KEYS.forEach(function(rk){
-          ((ko.rounds||{})[rk]||[]).forEach(function(m){
-            [m.slot1, m.slot2].forEach(function(s){ if(s) learn(s.car, slotName(s)); });
-          });
-        });
+        VRR.koEntrants(ko).forEach(function(s){ learn(s.car, slotName(s)); });
       });
     });
     return byName;
@@ -84,17 +79,15 @@ window.VRDriverStats = (function(){
       });
 
       kos.forEach(function(ko){
-        var deepest={};                       // driver key -> furthest round index they appear in
-        ROUND_KEYS.forEach(function(rk, ri){
-          ((ko.rounds||{})[rk]||[]).forEach(function(m){
-            [m.slot1, m.slot2].forEach(function(s){
-              var label=slotName(s); if(!label) return;
-              var k=VRR.driverKey(label); if(!k) return;
-              if(!per[k]) per[k]={ driver:label, pos:null, ms:null, koMs:null, cls:'', ko:null };
-              else per[k].driver=VRR.betterName(per[k].driver, label);
-              if(deepest[k]==null || ri>deepest[k]) deepest[k]=ri;
-            });
-          });
+        // driver key -> the furthest bracket slot they appear in. RallySprint
+        // rounds R16/QF/SF/F; RallyCross races QF/SF/B Final/A Final.
+        var deepest={};
+        VRR.koEntrants(ko).forEach(function(s){
+          var label=slotName(s); if(!label) return;
+          var k=VRR.driverKey(label); if(!k) return;
+          if(!per[k]) per[k]={ driver:label, pos:null, ms:null, koMs:null, cls:'', ko:null };
+          else per[k].driver=VRR.betterName(per[k].driver, label);
+          if(!deepest[k] || s.order>deepest[k].order) deepest[k]=s;
         });
 
         // Bracket runs are timed too, so they count towards a personal best.
@@ -107,13 +100,16 @@ window.VRDriverStats = (function(){
 
         var res=VRR.finalResult(ko);
         var winKey=res?VRR.driverKey(slotName(res.winner)):'';
+        var isRx=ko.format==='rx';
 
         Object.keys(deepest).forEach(function(k){
-          var ri=deepest[k], rank, label;
-          if(ri===3){                          // reached the final
+          var s=deepest[k], rank, label;
+          if(s.final){                         // reached the deciding race
             var won = !!winKey && k===winKey;
-            rank = won?5:4; label = won?'Winner':'2nd';
-          } else { rank = ri+1; label = ROUND_LABELS[ri]; }
+            if(won){ rank=5; label='Winner'; }
+            else if(!isRx){ rank=4; label='2nd'; }
+            else { var p=VRR.finalPlace(ko,k); rank=4; label=p?ordinal(p):s.label; }
+          } else { rank = Math.floor(s.order)+1; label = s.label; }
           var cur=per[k].ko;
           if(!cur || rank>cur.rank) per[k].ko={ rank:rank, label:label, cls:ko.name||'' };
         });

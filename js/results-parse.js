@@ -297,7 +297,8 @@ window.VRResults = (function(){
   var DISCIPLINES = [
     { key:'rallysprint',        label:'RallySprint'         },
     { key:'reverserallysprint', label:'Reverse RallySprint' },
-    { key:'rallycross',         label:'Rallycross'          },
+    { key:'rallycross',         label:'RallyCross'          },
+    { key:'rallychase',         label:'RallyChase'          },
     { key:'stagerally',         label:'Stage Rally'         },
   ];
 
@@ -342,6 +343,112 @@ window.VRResults = (function(){
     });
   }
 
+  /* ===== RallyCross-format events (RallyCross, RallyChase) ===================
+     Their archive tabs are copies of the RX "Web" tab: a Qualifying table and a
+     Knockouts table, read by header label. They are parsed into the same
+     {overall, knockouts} shape as a RallySprint event so the stats code can
+     treat both alike. Each knockout is {name:<class>, format:'rx', races:[…],
+     rounds:{}} — races hold any number of cars, so the two-slot `rounds` stays
+     empty and the helpers below (koEntrants, finalResult, finalPlace, koRuns)
+     handle both shapes. Same parsing rules as js/rxboard.js. */
+  function rxTypes(){ return (((window.VR_CONFIG||{}).rx||{}).eventTypes||['RallyCross','RallyChase']).map(norm); }
+  function isRxEvent(ev){ return rxTypes().indexOf(norm(ev&&ev.type))>=0; }
+  function rxRanges(){ return (((window.VR_CONFIG||{}).rx||{}).ranges)||{}; }
+
+  function gvizTable(wb, tab, range, cb){
+    var cbName='__vrResT'+(++_seq);
+    var s=document.createElement('script');
+    window[cbName]=function(resp){ delete window[cbName]; s.remove(); cb(resp&&resp.status==='ok'?resp.table:null); };
+    s.onerror=function(){ delete window[cbName]; s.remove(); cb(null); };
+    s.src='https://docs.google.com/spreadsheets/d/'+wb+'/gviz/tq?sheet='+encodeURIComponent(tab)+
+      '&headers=1&range='+encodeURIComponent(range)+'&tqx=out:json;responseHandler:'+cbName;
+    document.head.appendChild(s);
+  }
+  // Table -> [{key:value}] by header label; falls back to reading the labels
+  // off the first row when gviz didn't treat it as a header.
+  function rxRecords(table, want){
+    var rows=(table&&table.rows)||[], keys=Object.keys(want);
+    function indexFrom(labels){ var idx={}; keys.forEach(function(k){ idx[k]=labels.indexOf(norm(want[k])); }); return idx; }
+    function found(idx){ return keys.filter(function(k){ return idx[k]>=0; }).length; }
+    var idx=indexFrom(((table&&table.cols)||[]).map(function(c){ return norm(c&&c.label); }));
+    if(found(idx)<keys.length && rows.length){
+      var alt=indexFrom(((rows[0]&&rows[0].c)||[]).map(function(c){ return norm(cellVal(c)); }));
+      if(found(alt)>found(idx)){ idx=alt; rows=rows.slice(1); }
+    }
+    return rows.map(function(r){ var o={}, c=r.c||[];
+      keys.forEach(function(k){ o[k]=idx[k]>=0?cellVal(c[idx[k]]).trim():''; }); return o; });
+  }
+  var RX_STAGE = { QF:{order:1,label:'QF'}, SF:{order:2,label:'SF'}, BFINAL:{order:2.5,label:'B Final'},
+                   AFINAL:{order:3,label:'A Final'}, FINAL:{order:3,label:'Final'} };
+  function rxStage(key){ return RX_STAGE[key] || RX_STAGE[key.replace(/\d+$/,'')] || {order:0,label:key}; }
+  function isNumText(v){ return /^\s*\d+\s*$/.test(String(v==null?'':v)); }
+
+  function parseRxEvent(qTable, kTable){
+    // Qualifying → each car's best valid time across every round.
+    var best={};
+    rxRecords(qTable,{round:'Round',cls:'Class',num:'No',driver:'Driver',time:'Time'}).forEach(function(r){
+      if(!/^Q\d+$/i.test(r.round.replace(/\s+/g,'')) || !r.driver) return;
+      var ms=parseTime(r.time); if(ms==null||ms>=SENTINEL) return;
+      var k=r.num||r.driver;
+      if(!best[k]||ms<best[k].ms) best[k]={id:String(k), num:r.num, driver:r.driver, ms:ms, round:r.round.toUpperCase(), 'class':r.cls};
+    });
+    var overall=Object.keys(best).map(function(k){ return best[k]; }).sort(function(a,b){ return a.ms-b.ms; });
+
+    // Knockouts → one entry per class, races in running order.
+    var byClass={}, order=[];
+    rxRecords(kTable,{cls:'Class',race:'Race',num:'No',driver:'Driver',time:'Time',finish:'Finish'}).forEach(function(r,i){
+      if(!r.cls||!r.race||(!r.driver&&!r.num)) return;
+      if(!byClass[r.cls]){ byClass[r.cls]={}; order.push(r.cls); }
+      var key=r.race.toUpperCase().replace(/\s+/g,'');
+      var race=byClass[r.cls][key]||(byClass[r.cls][key]={key:key, name:r.race, entries:[], _i:i});
+      race.entries.push({car:r.num, driver:r.driver, time:r.time, ms:parseTime(r.time), finish:r.finish});
+    });
+    var knockouts=order.map(function(cls){
+      var races=Object.keys(byClass[cls]).map(function(k){ return byClass[cls][k]; })
+        .sort(function(a,b){ return rxStage(a.key).order-rxStage(b.key).order || a._i-b._i; });
+      return { name:cls, format:'rx', races:races, rounds:{} };
+    });
+    var classList=[];
+    overall.forEach(function(d){ if(d['class']&&classList.indexOf(d['class'])<0) classList.push(d['class']); });
+    return { overall:overall, knockouts:knockouts, classList:classList.sort() };
+  }
+
+  /* Everyone who took part in a knockout → [{car, driver, order, label, final}].
+     `order` says how far into the bracket that slot is (higher = later);
+     `final` marks the deciding race (RallySprint F, RallyCross A Final). */
+  function koEntrants(ko){
+    var out=[];
+    if(ko&&ko.format==='rx'){
+      (ko.races||[]).forEach(function(race){ var st=rxStage(race.key);
+        race.entries.forEach(function(e){ out.push({car:e.car, driver:e.driver, order:st.order, label:st.label, final:st.order===3}); });
+      });
+      return out;
+    }
+    ['R16','QF','SF','F'].forEach(function(rk,ri){
+      ((((ko||{}).rounds)||{})[rk]||[]).forEach(function(m){
+        [m.slot1, m.slot2].forEach(function(s){ if(s) out.push({car:s.car, driver:s.driver||'', order:ri, label:rk, final:rk==='F', slot:s}); });
+      });
+    });
+    return out;
+  }
+  function rxFinalRace(ko){
+    var races=(ko&&ko.races)||[];
+    for(var i=races.length-1;i>=0;i--) if(rxStage(races[i].key).order===3) return races[i];
+    return null;
+  }
+  // Finishing place in the deciding race for a driver key, or null if unknown.
+  function finalPlace(ko, key){
+    if(ko&&ko.format==='rx'){
+      var f=rxFinalRace(ko); if(!f) return null;
+      for(var i=0;i<f.entries.length;i++){ var e=f.entries[i];
+        if(driverKey(e.driver)===key) return isNumText(e.finish)?+e.finish:null; }
+      return null;
+    }
+    var res=finalResult(ko);
+    if(!res) return null;
+    return driverKey(res.winner.driver||res.winner.car||'')===key ? 1 : 2;
+  }
+
   // loadEvents({onProgress:fn(done,total)}, cb) -> cb(events|null)
   // Each event: {name, tab, type, date, dateMs, year, slug, parsed}
   function loadEvents(opts, cb){
@@ -349,25 +456,33 @@ window.VRResults = (function(){
     var WB=(((window.VR_CONFIG||{}).previous)||{}).workbookId||"";
     loadIndex(function(events){
       if(!events){ cb(events); return; }
-      // RallyCross-format tabs (RallyCross, RallyChase — config.js rx.eventTypes)
-      // are copies of the RX "Web" tab, a layout this parser can't read. Left out
-      // of Stats/Drivers until RallyCross stats exist.
-      var rxTypes=(((window.VR_CONFIG||{}).rx||{}).eventTypes||['RallyCross']).map(norm);
-      events = events.filter(function(ev){ return rxTypes.indexOf(norm(ev.type))<0; });
       var total=events.length, got=0;
       if(!total){ cb(events); return; }
       if(opts.onProgress) opts.onProgress(0,total);
       events.forEach(function(ev){
-        // Two ranges per event: the full tab, plus KO_RANGE for the brackets.
-        // The event is only parsed once both have landed; losing the second one
-        // costs the SF times but nothing else.
-        var mainRows=null, koRows=null, left=2;
+        var left=2;
+        function done(){
+          got++; if(opts.onProgress) opts.onProgress(got,total);
+          if(got===total) cb(events);
+        }
+        if(isRxEvent(ev)){
+          // RallyCross-format tab: the Qualifying and Knockouts tables.
+          var R=rxRanges(), qT=null, kT=null;
+          var rxReady=function(){ if(--left) return;
+            ev.format='rx'; ev.parsed=parseRxEvent(qT,kT); done(); };
+          gvizTable(WB, ev.tab, R.qualifying||'A1:G', function(t){ qT=t; rxReady(); });
+          gvizTable(WB, ev.tab, R.knockouts||'I1:P',  function(t){ kT=t; rxReady(); });
+          return;
+        }
+        // RallySprint tab. Two ranges: the full tab, plus KO_RANGE for the
+        // brackets. The event is only parsed once both have landed; losing the
+        // second one costs the SF times but nothing else.
+        var mainRows=null, koRows=null;
         function ready(){
           if(--left) return;
           ev.parsed = mainRows ? parseEvent(buildGrid(mainRows), koRows?buildGrid(koRows):null)
                                : { overall:[], knockouts:[] };
-          got++; if(opts.onProgress) opts.onProgress(got,total);
-          if(got===total) cb(events);
+          done();
         }
         gviz(WB, ev.tab, FETCH_RANGE, function(rows){ mainRows=rows; ready(); });
         gviz(WB, ev.tab, KO_RANGE,    function(rows){ koRows=rows;   ready(); });
@@ -381,6 +496,18 @@ window.VRResults = (function(){
      never named a driver, and the 30-minute non-time sentinel are skipped. */
   function koRuns(ko){
     var out=[];
+    if(ko&&ko.format==='rx'){
+      // RallyCross race times count towards records like qualifying times do.
+      (ko.races||[]).forEach(function(race){
+        race.entries.forEach(function(e){
+          var name=String(e.driver||'').trim();
+          if(!name || /^(bye|tbd|\?|—|-)$/i.test(name) || isErrText(name)) return;
+          if(e.ms==null || e.ms<=0 || e.ms>=SENTINEL) return;
+          out.push({ driver:name, car:e.car||'', ms:e.ms, round:rxStage(race.key).label });
+        });
+      });
+      return out;
+    }
     ['R16','QF','SF','F'].forEach(function(rk){
       ((((ko||{}).rounds)||{})[rk]||[]).forEach(function(m){
         [m.slot1, m.slot2].forEach(function(s){
@@ -396,15 +523,24 @@ window.VRResults = (function(){
     return out;
   }
 
-  // Winner + runner-up (top 2) of a knockout final, or null if undecided.
+  /* Result of a knockout's deciding race, or null if undecided:
+     {winner, runnerUp, podium:[1st, 2nd(, 3rd)]}. A RallySprint final has two
+     cars, so its podium is the two finalists; a RallyCross A Final's is the top 3. */
   function finalResult(ko){
+    if(ko&&ko.format==='rx'){
+      var f=rxFinalRace(ko); if(!f) return null;
+      var at=function(p){ for(var i=0;i<f.entries.length;i++) if(isNumText(f.entries[i].finish)&&+f.entries[i].finish===p) return f.entries[i]; return null; };
+      var w=at(1); if(!w) return null;
+      var pod=[w, at(2), at(3)].filter(Boolean);
+      return { winner:w, runnerUp:at(2), podium:pod };
+    }
     var fm = ko.rounds && ko.rounds['F'];
     if(!fm || !fm.length) return null;
     var f = fm[0];
     var winner = f.slot1.winner ? f.slot1 : (f.slot2.winner ? f.slot2 : null);
     if(!winner) return null;
     var runnerUp = f.slot1.winner ? f.slot2 : f.slot1;
-    return { winner: winner, runnerUp: runnerUp };
+    return { winner: winner, runnerUp: runnerUp, podium: [winner, runnerUp] };
   }
 
   return {
@@ -422,6 +558,10 @@ window.VRResults = (function(){
     loadEvents: loadEvents,
     loadIndex: loadIndex,
     eventSlug: eventSlug,
+    isRxEvent: isRxEvent,
+    parseRxEvent: parseRxEvent,
+    koEntrants: koEntrants,
+    finalPlace: finalPlace,
     DISCIPLINES: DISCIPLINES,
   };
 })();

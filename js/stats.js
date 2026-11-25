@@ -23,8 +23,11 @@
     touring:     'Touring',
     awd:         'AWD',
     modified4wd: 'AWD',            // 2021 spelling
+    mod4wd:      'AWD',            // RallyChase 2024 spelling
+    miata:       'Miata',          // RallyCross 2022
+    open:        'Open',           // RallyCross 2021
   };
-  var CLASS_ORDER = ['BimmaCup','BimmaCup Jr.','Touring','AWD'];
+  var CLASS_ORDER = ['BimmaCup','BimmaCup Jr.','Touring','AWD','Miata','Open'];
   function canonClass(raw){ return raw ? (CLASS_ALIASES[VRR.norm(raw)] || null) : null; }
   function classSort(a,b){ var ia=CLASS_ORDER.indexOf(a), ib=CLASS_ORDER.indexOf(b);
     return (ia<0?99:ia)-(ib<0?99:ib) || a.localeCompare(b); }
@@ -84,10 +87,11 @@
         var wLabel=slotName(res.winner); if(!wLabel) return;   // undecided/placeholder final → skip
         var wk=nm(wLabel);
         wins[wk]=(wins[wk]||0)+1;
-        podiums[wk]=(podiums[wk]||0)+1;
         if(koCls){ classTitles[koCls]=classTitles[koCls]||{}; classTitles[koCls][wk]=(classTitles[koCls][wk]||0)+1; }
-        var ru=slotName(res.runnerUp);
-        if(ru){ podiums[nm(ru)]=(podiums[nm(ru)]||0)+1; }
+        // Podium = the two finalists in a RallySprint, the A Final top 3 in RallyCross.
+        (res.podium||[res.winner,res.runnerUp]).forEach(function(s){
+          var p=slotName(s); if(p){ var pk=nm(p); podiums[pk]=(podiums[pk]||0)+1; }
+        });
       });
     });
 
