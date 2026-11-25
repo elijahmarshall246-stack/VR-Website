@@ -1,0 +1,74 @@
+/* RallyCross live board (js/rxboard.js). Builds on the .lb / lb__* styles in
+   board.css — only RallyCross-specific additions live here. Element ids are
+   #rx… so nothing here can reach the RallySprint board (#lb…). */
+
+#rxQualifying:not(.hide){display:block;}
+#rxOverall, #rxHeats{width:100%; min-width:0;}
+
+/* ----- By Heats ----- */
+.rx-roundswitch{display:none;}                    /* mobile only, see below */
+.rx-heat.alt{background:rgba(0,0,0,.035);}
+.rx-hentry{grid-template-columns:34px 1fr auto 26px;}
+.rx-p{font-family:var(--font-mono); font-weight:700; font-size:12px; color:var(--muted); text-align:center;}
+.rx-hentry.rx-p1 .lb__hdrv{color:var(--gold); font-weight:700;}
+.rx-hentry.rx-p1 .rx-p{color:#fff; background:var(--gold); border-radius:5px; padding:2px 0;}
+.lb__hcol .lb__bempty{padding:14px;}
+
+/* ----- Knockouts ----- */
+.rx-races{display:flex; flex-direction:column; gap:16px;}
+.rx-racegroup{display:grid; grid-template-columns:1fr; gap:16px;}
+.rx-racegroup--pair{grid-template-columns:repeat(2,minmax(0,1fr));}
+
+.rx-race{background:var(--surface); border-radius:12px; overflow:hidden;}
+.rx-race__head{display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:11px 14px; background:var(--brand-2); color:#fff;}
+.rx-race--final .rx-race__head{background:var(--brand);}
+.rx-race__name{font-family:var(--vr-font-heading,Arial,sans-serif); font-weight:700; text-transform:uppercase;
+  letter-spacing:.02em; font-size:15px; line-height:1.2;}
+.rx-race__tag{font-family:var(--font-mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+  background:rgba(255,255,255,.18); border-radius:20px; padding:4px 9px; white-space:nowrap;}
+.rx-race.is-pending .rx-race__table tbody{opacity:.75;}
+.rx-race__scroll{overflow-x:auto;}
+
+.rx-race__table{width:100%; border-collapse:collapse; font-size:14px;}
+.rx-race__table th{font-family:var(--font-mono); font-size:10px; font-weight:400; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--muted); text-align:left; padding:9px 10px 7px; border-bottom:1px solid var(--line);
+  white-space:nowrap;}
+.rx-race__table td{padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:middle;}
+.rx-race__table tbody tr:last-child td{border-bottom:0;}
+.rx-race__table .c{text-align:center;}
+.rx-race__table .r{text-align:right;}
+.rx-start{font-family:var(--font-mono); color:var(--muted); width:52px;}
+.rx-num{font-family:var(--font-mono); font-weight:700; color:var(--num); width:52px;}
+.rx-drv{font-weight:700; line-height:1.25;}
+.rx-mono{font-family:var(--font-mono); font-weight:700; white-space:nowrap;}
+.rx-muted{color:var(--muted); opacity:.6; font-weight:400;}
+.rx-fin{font-family:var(--font-mono); font-weight:700; font-size:16px; width:58px;}
+.rx-race__table tr.is-winner td{background:rgba(241,89,42,.08);}
+.rx-race__table tr.is-winner td:first-child{box-shadow:inset 3px 0 0 var(--brand);}
+.rx-race__table tr.is-winner .rx-fin{color:var(--gold);}
+.rx-win{display:inline-block; vertical-align:middle; margin-left:6px; font-family:var(--font-mono); font-size:9px;
+  font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#fff; background:var(--brand);
+  border-radius:4px; padding:2px 6px;}
+.rx-race__table tr.is-placeholder td{color:var(--muted); font-style:italic; font-weight:400;}
+.rx-race__table tr.flash td{animation:hflash 1.2s ease;}
+.rx-race__note{font-family:var(--font-mono); font-size:11px; letter-spacing:.06em; color:var(--muted);
+  padding:9px 14px 11px; border-top:1px solid var(--line);}
+
+@media(max-width:900px){
+  .rx-racegroup--pair{grid-template-columns:1fr;}
+}
+
+@media(max-width:560px){
+  /* One qualifying round at a time, picked with the Q1/Q2/Q3 switcher. */
+  .rx-roundswitch{display:flex; gap:6px; margin-bottom:12px;}
+  .rx-hcol{display:none;}
+  .rx-hcol.is-active{display:block;}
+
+  .rx-col-grid{display:none;}
+  .rx-race__table{font-size:13px;}
+  .rx-race__table th, .rx-race__table td{padding:8px 6px;}
+  .rx-start, .rx-num{width:38px;}
+  .rx-fin{width:42px; font-size:15px;}
+  .rx-win{display:block; width:max-content; margin:4px 0 0;}
+}

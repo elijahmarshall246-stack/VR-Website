@@ -18,6 +18,34 @@ window.VR_CONFIG = {
     },
   },
 
+  // RallyCross-format results (js/rxboard.js): the live board on /happening-now
+  // (Live Calendar row of one of eventTypes with Live = Yes, or ?event=rx) and
+  // archived events of those types on /past-events.
+  rx: {
+    // Event types (Live Calendar "type" / archive Index "EventType") whose
+    // results use this format. Case and spaces don't matter.
+    eventTypes: ['RallyCross', 'RallyChase'],
+
+    sheetId: '11VG6EY8_0XvEbxc4OcKHPabpAUZ75gELDOv3T-dL_Ao',   // MASTER Streaming RX
+    gid:     '1325113839',                                     // "Web" tab
+    ranges: {
+      qualifying: 'A1:G',   // Round | Heat | Class | No | Driver | Time | P
+      knockouts:  'I1:P',   // Class | Race | Start | GridTime | No | Driver | Time | Finish
+      settings:   'R1:S',   // Setting | Value
+    },
+    pollSeconds: 10,
+
+    // "RallyCross Live Results Settings" tab in VR Website Settings (key/value rows).
+    settingsSheetId: '1ghHvvVe4kNnkVUbYTsBHxrfB2MLH-erhOCvlOBbU3Uc',
+    settingsGid:     '1774615058',
+
+    // Used while the settings tab leaves Title / Date blank.
+    defaults: {
+      title: 'International RallyCross',
+      date:  '28th November 2026',
+    },
+  },
+
   previous: {
     workbookId: '1MS1c8w8nRo-5hVPjl-IQRr9UMLNmDj8drFTpq-i3J7w',
     indexTabName: 'Index',

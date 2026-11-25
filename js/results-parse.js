@@ -349,6 +349,11 @@ window.VRResults = (function(){
     var WB=(((window.VR_CONFIG||{}).previous)||{}).workbookId||"";
     loadIndex(function(events){
       if(!events){ cb(events); return; }
+      // RallyCross-format tabs (RallyCross, RallyChase — config.js rx.eventTypes)
+      // are copies of the RX "Web" tab, a layout this parser can't read. Left out
+      // of Stats/Drivers until RallyCross stats exist.
+      var rxTypes=(((window.VR_CONFIG||{}).rx||{}).eventTypes||['RallyCross']).map(norm);
+      events = events.filter(function(ev){ return rxTypes.indexOf(norm(ev.type))<0; });
       var total=events.length, got=0;
       if(!total){ cb(events); return; }
       if(opts.onProgress) opts.onProgress(0,total);

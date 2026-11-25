@@ -23,11 +23,13 @@
 
   <link rel="stylesheet" href="css/tokens.css?v=22">
   <link rel="stylesheet" href="css/shell.css?v=46">
-  <link rel="stylesheet" href="css/board.css?v=27">
+  <link rel="stylesheet" href="css/board.css?v=29">
+  <link rel="stylesheet" href="css/rxboard.css?v=1">
 
-  <script defer src="config.js?v=20"></script>
-  <script defer src="js/shell.js?v=31"></script>
-  <script defer src="js/previous.js?v=27"></script>
+  <script defer src="config.js?v=22"></script>
+  <script defer src="js/shell.js?v=33"></script>
+  <script defer src="js/rxboard.js?v=6"></script>
+  <script defer src="js/previous.js?v=29"></script>
   <script defer src="js/qualtabs.js?v=20"></script>
 </head>
 <body>
@@ -84,7 +86,6 @@
   <main class="vr-main">
     <div class="vr-container">
       <section id="vrPrevList" style="display:none" aria-label="Choose an event">
-        <p class="vr-archivenote">For now, only <strong>RallySprint</strong> data is available. <strong>Stage Rally</strong> and <strong>Rallycross</strong> are coming soon.</p>
         <div class="vr-filters">
           <label class="vr-filterselect" id="vrTypeFilter"></label>
           <label class="vr-filterselect" id="vrYearFilter"></label>
@@ -158,6 +159,61 @@
           </div>
 
           <div class="lb__foot">Final results.</div>
+        </div>
+      </div>
+
+      <!-- RallyCross archive (js/rxboard.js → VRRxBoard.load), shown by js/previous.js for RallyCross events -->
+      <div class="vr-board-wrap" id="rxPrevBoard" style="display:none">
+        <div class="lb rx" id="rx">
+          <div class="lb__head">
+            <span class="lb__live" id="rxLive" style="display:none"><span class="lb__dot"></span>Live</span>
+            <div class="lb__titlesection">
+              <h1 class="lb__title"><span id="rxTitleName">RallyCross</span> <span id="rxTitleSub">· Qualifying</span></h1>
+              <div class="lb__date" id="rxDate"></div>
+            </div>
+            <div class="lb__headright">
+              <div class="lb__updated" id="rxUpdated" style="display:none"><span class="udot"></span><span id="rxUpdatedTxt">—</span></div>
+            </div>
+          </div>
+
+          <div class="lb__tabrow">
+            <div class="lb__tabs" id="rxTabs">
+              <button class="lb__tab active" data-view="0" type="button">Qualifying</button>
+              <button class="lb__tab" data-view="1" type="button">Knockouts</button>
+            </div>
+            <div class="vr-classfilter" id="rxClassFilter" role="group" aria-label="Filter by class"></div>
+          </div>
+
+          <div class="lb__err" id="rxErr"></div>
+
+          <div class="lb__views loading" id="rxViews" aria-live="polite">
+            <div class="lb__spinner" id="rxSpinner">
+              <div class="lb__spinring"></div>
+              <span>Loading results…</span>
+            </div>
+            <section class="view" id="rxQualifying">
+              <div class="lb__subtabs" id="rxSubtabs" role="group" aria-label="Qualifying views">
+                <button class="lb__subtab active" data-sub="overall" type="button">Overall Fastest</button>
+                <button class="lb__subtab" data-sub="heats" type="button">By Heats</button>
+              </div>
+              <section class="view" id="rxOverall">
+                <div class="lb__colhead"><span>Pos</span><span>No.</span><span>Driver</span><span class="lb__colend"><span class="r">Best Time</span></span></div>
+                <div class="lb__list" id="rxList"></div>
+              </section>
+              <section class="view qf-off" id="rxHeats">
+                <div class="rx-roundswitch" id="rxRoundSwitch" role="group" aria-label="Qualifying round"></div>
+                <div class="lb__heatgrid" id="rxHeatGrid"></div>
+              </section>
+            </section>
+            <section class="view hide" id="rxKnockouts">
+              <div class="lb__kcat" id="rxKcatBtns" role="group" aria-label="Class"></div>
+              <div class="rx-races" id="rxRaces"></div>
+            </section>
+          </div>
+
+          <div class="lb__foot">
+            Final results.
+          </div>
         </div>
       </div>
 

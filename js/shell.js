@@ -74,13 +74,43 @@
     setInterval(load, 10 * 60 * 1000);
   })();
 
+  /* ===== Live status + board routing =====
+     Reads the Live Calendar every 30s. A row with Live = Yes and type
+     "RallySprint" or a RallyCross-format type (config.js → rx.eventTypes:
+     RallyCross, RallyChase) makes the site live (body.vr-live → nav dot).
+     On /happening-now it also picks the board:
+       route 'rx' → RallyCross board (#rxLiveBoard, js/rxboard.js) — when a
+                    RallyCross-format row is live, or the URL has ?event=rx (testing)
+       route 'rs' → everything else; the RallySprint board behaves exactly as
+                    it always has (#vrLiveBoard when live, "No live event" if not).
+     Boards subscribe with window.VRRoute.on(fn(route, liveType)); fn runs once
+     the first answer is in and again whenever route or live type changes. */
   (function(){
     var EV = (CFG.live && CFG.live.events) || {};
     var noLive = document.getElementById('vrNoLive');
     var liveBoard = document.getElementById('vrLiveBoard');
+    var rxBoard = document.getElementById('rxLiveBoard');
     var liveLoading = document.getElementById('vrLiveLoading');
     var onIndex = !!liveBoard;
     var _seq = 0;
+    var forceRx = /[?&]event=rx(?:&|$)/i.test(location.search);
+
+    // Event types that use the RallyCross results format (config.js → rx.eventTypes).
+    var RX_TYPES = ((CFG.rx && CFG.rx.eventTypes) || ['RallyCross']).map(function(t){ return String(t).toLowerCase().replace(/[^a-z0-9]/g,''); });
+    function isRxType(t){ return !!t && RX_TYPES.indexOf(String(t).toLowerCase().replace(/[^a-z0-9]/g,''))>=0; }
+
+    var route = null, liveType = null, listeners = [];
+    function notify(){ listeners.slice().forEach(function(fn){ try{ fn(route, liveType); }catch(e){ if (window.console) console.error(e); } }); }
+    function setRoute(r, t){
+      var changed = r !== route || t !== liveType;
+      route = r; liveType = t;
+      if (changed) notify();
+    }
+    window.VRRoute = {
+      on: function(fn){ listeners.push(fn); if (route) fn(route, liveType); },
+      current: function(){ return { route: route, liveType: liveType }; },
+      isRxType: isRxType
+    };
 
     function cv(c){ return c ? (c.f!=null ? c.f : (c.v!=null ? String(c.v) : '')) : ''; }
     function fetchRows(cb){
@@ -93,27 +123,48 @@
       s.src=base+'&tqx=out:json;responseHandler:'+cbName;
       document.head.appendChild(s);
     }
-    function isLiveFrom(rows){
-      if (!rows || !rows.length) return false;
+    // → the live type ('rallycross', 'rallychase' … or 'rallysprint') or null.
+    //   A RallyCross-format type wins if both are live.
+    function liveTypeFrom(rows){
+      if (!rows || !rows.length) return null;
       var hdr=(rows[0].c||[]).map(function(c){ return String(cv(c)).trim().toLowerCase(); });
       var li=hdr.indexOf('live'), ti=hdr.indexOf('type');
-      if (li<0) return false;
+      if (li<0 || ti<0) return null;
+      var found=null;
       for (var r=1;r<rows.length;r++){
         var c=rows[r].c||[];
-        var live=String(cv(c[li])).trim().toLowerCase()==='yes';
-        var rally=ti>=0 && String(cv(c[ti])).trim().toLowerCase()==='rallysprint';
-        if (live && rally) return true;
+        if (String(cv(c[li])).trim().toLowerCase()!=='yes') continue;
+        var type=String(cv(c[ti])).trim().toLowerCase().replace(/\s+/g,'');
+        if (isRxType(type)) return type;
+        if (type==='rallysprint') found='rallysprint';
       }
-      return false;
+      return found;
     }
-    function apply(isLive){
-      document.body.classList.toggle('vr-live', isLive);
-      if (!onIndex) return;
-      if (liveLoading) liveLoading.classList.remove('is-on');
-      if (isLive){ if (noLive) noLive.classList.remove('is-on'); liveBoard.style.display=''; }
-      else { liveBoard.style.display='none'; if (noLive) noLive.classList.add('is-on'); }
+    function apply(type){
+      var r = (forceRx || isRxType(type)) ? 'rx' : 'rs';
+      document.body.classList.toggle('vr-live', !!type);
+      if (onIndex){
+        if (liveLoading) liveLoading.classList.remove('is-on');
+        if (r==='rx'){
+          liveBoard.style.display='none';
+          if (noLive) noLive.classList.remove('is-on');
+          if (rxBoard) rxBoard.style.display='';
+        } else {
+          if (rxBoard) rxBoard.style.display='none';
+          // RallySprint — unchanged from before RallyCross was added.
+          if (type==='rallysprint'){ if (noLive) noLive.classList.remove('is-on'); liveBoard.style.display=''; }
+          else { liveBoard.style.display='none'; if (noLive) noLive.classList.add('is-on'); }
+        }
+      }
+      setRoute(r, type);
     }
-    function poll(){ fetchRows(function(rows){ apply(rows===null ? false : isLiveFrom(rows)); }); }
+    function poll(){ fetchRows(function(rows){ apply(rows===null ? null : liveTypeFrom(rows)); }); }
+
+    // ?event=rx shows the RallyCross board straight away, before the calendar answers.
+    if (forceRx && onIndex) apply(null);
+    // If the calendar never answers (blocked script, sheet error page), boards
+    // still start: RallySprint as before, or RallyCross when forced.
+    setTimeout(function(){ if (!route) setRoute(forceRx ? 'rx' : 'rs', null); }, 8000);
     poll();
     setInterval(poll, 30000);
   })();

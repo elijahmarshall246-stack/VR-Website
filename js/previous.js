@@ -43,8 +43,14 @@
 
   var el = function(id){ return document.getElementById(id); };
   var board = el('vrPrevBoard'), back = el('vrBack');
+  // RallyCross events render on the RallyCross board (js/rxboard.js), which
+  // reads a saved copy of the RX "Web" tab by header label.
+  var rxBoard = el('rxPrevBoard'), detailRx = false;
+  // Event types that use the RallyCross results format (config.js → rx.eventTypes).
+  var RX_TYPES = (((window.VR_CONFIG||{}).rx||{}).eventTypes||['RallyCross']).map(function(t){ return norm(t); });
+  function isRx(ev){ return RX_TYPES.indexOf(norm(ev&&ev.type))>=0 && !!rxBoard && !!window.VRRxBoard; }
   var listView = el('vrPrevList'), typeFilter = el('vrTypeFilter'), yearFilter = el('vrYearFilter'), eventList = el('vrEventList');
-  var CANON_TYPES = ['RallySprint','Rallycross','Stage Rally'];
+  var CANON_TYPES = ['RallySprint','RallyCross','Stage Rally'];
   var loading = el('vrPrevLoading'), empty = el('vrPrevEmpty'), error = el('vrPrevError');
   var list = el('lbList'), grid = el('lbHeatGrid');
   var pdfWrap = el('vrPdfWrap'), pdfLink = el('vrPdfLink');
@@ -434,7 +440,8 @@
     empty.classList.toggle('is-on',  which==='empty');
     error.classList.toggle('is-on',  which==='error');
     listView.style.display = which==='list'   ? '' : 'none';
-    board.style.display    = which==='detail' ? '' : 'none';
+    board.style.display    = which==='detail' && !detailRx ? '' : 'none';
+    if(rxBoard) rxBoard.style.display = which==='detail' && detailRx ? '' : 'none';
     back.style.display     = which==='detail' ? '' : 'none';
     if(which!=='detail' && pdfWrap) pdfWrap.style.display='none';
     window.scrollTo({top:0, behavior:'auto'});
@@ -489,13 +496,21 @@
   }
 
   function enterDetail(ev){
-    el('lbTitleName').textContent=ev.name;
-    el('lbDate').textContent=ev.date||'';
+    if(!detailRx){ el('lbTitleName').textContent=ev.name; el('lbDate').textContent=ev.date||''; }
     showOnly('detail');
     if(pdfWrap){ if(ev.pdf){ pdfLink.href=ev.pdf; pdfWrap.style.display=''; } else pdfWrap.style.display='none'; }
   }
   function selectEvent(ev, replaceUrl){
     setUrl(BASE_PATH+'/'+eventSlug(ev), replaceUrl);
+    detailRx = isRx(ev);
+    if(detailRx){
+      showOnly('loading');
+      window.VRRxBoard.load(WB, ev.tab, {title:ev.name, date:ev.date}, function(ok){
+        if(!ok){ detailRx=false; showOnly('error'); return; }
+        enterDetail(ev);
+      });
+      return;
+    }
     if(cache[ev.tab]){ render(cache[ev.tab].G, cache[ev.tab].GK); enterDetail(ev); return; }
     showOnly('loading');
     // Two ranges in parallel: the full tab for qualifying, and KO_RANGE for the

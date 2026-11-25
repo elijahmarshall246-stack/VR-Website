@@ -741,5 +741,12 @@
     start();
     startKnockouts();
   }
-  loadSettings(s=>{ applySettings(s); boot(); });
+  const bootRallySprint=()=>loadSettings(s=>{ applySettings(s); boot(); });
+  /* RallyCross routing (js/shell.js → window.VRRoute): while the RallyCross
+     board owns /happening-now, RallySprint doesn't poll at all. It starts the
+     first time the route is anything else — straight away on a normal day. */
+  if(window.VRRoute){
+    let rsStarted=false;
+    window.VRRoute.on(route=>{ if(route!=='rx'&&!rsStarted){ rsStarted=true; bootRallySprint(); } });
+  } else bootRallySprint();
 })();
