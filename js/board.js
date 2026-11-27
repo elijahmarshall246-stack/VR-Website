@@ -11,6 +11,12 @@
   const KO_HEADER_RE = /round\s*of\s*16/i;
   const KO_HEADER_ROW = 5;
 
+  /* Round of 32 ("Rnd of 32/Pre-Quals" on the class tab): one slot per row,
+     rows 6–37, car number in `col` (driver +1 col, time +2). Match n is rows
+     4+2n and 5+2n, and each pair feeds one Round of 16 slot (rows 6–7 → H7). */
+  const r32 = col => Array.from({length:16}, (_,i) =>
+    ({ match:i+1, slot1:col+(6+2*i), slot2:col+(7+2*i) }));
+
   /* =================================================================
      CONFIG
      ================================================================= */
@@ -28,6 +34,7 @@
       categories: [
         { name: 'BimmaCup', gid: '2038855303',
           rounds: {
+            R32: r32('D'),
             R16: [
               { match:8, slot1:'H7', slot2:'H9' },
               { match:1, slot1:'H11',  slot2:'H13'  },
@@ -107,6 +114,7 @@
         },
         { name: 'AWD', gid: '2111958111',
           rounds: {
+            R32: r32('D'),
             R16: [
               { match:8, slot1:'H7',   slot2:'H9'   },
               { match:1, slot1:'H11',  slot2:'H13'  },
@@ -516,7 +524,7 @@
 
 
   function loadOneKnockoutTab(catCfg, cb){
-    const ROUND_KEYS=['R16','QF','SF','F'];
+    const ROUND_KEYS=['R32','R16','QF','SF','F'];
     if(!catCfg.gid || !catCfg.rounds){ cb({name:catCfg.name, rounds:{}}); return; }
 
     /* The whole tab comes back, so a cell's row index is simply its sheet row
@@ -579,7 +587,14 @@
          carrying data (a field that starts at the quarter-finals has no round of
          16), then render every round from there on in full, empty slots and all.
          The Finals column stays on screen as TBD while the semis are running. */
-      const hasData=rk=>(roundResults[rk]||[]).some(m=>m.slot1.car||m.slot1.driver||m.slot2.car||m.slot2.driver);
+      /* Round of 32 is the exception: its unused slots are pre-filled "Bye", and a
+         lone driver against a Bye is just seeding, so it only counts as running
+         when at least one match has a real driver on BOTH sides. Otherwise the
+         bracket starts at the Round of 16 as before. */
+      const realSlot=s=>!!(s.car||s.driver)&&s.car!=='Bye'&&s.driver!=='Bye';
+      const hasData=rk=>(roundResults[rk]||[]).some(m=> rk==='R32'
+        ? realSlot(m.slot1)&&realSlot(m.slot2)
+        : m.slot1.car||m.slot1.driver||m.slot2.car||m.slot2.driver);
       const firstLive=ROUND_KEYS.findIndex(hasData);
       const rounds={};
       if(firstLive>=0) ROUND_KEYS.slice(firstLive).forEach(rk=>{
@@ -623,8 +638,8 @@
     const note=msg=>{ bracket.innerHTML=`<div class="lb__bempty">${msg}</div>`; };
     if(!catData){ note('No data yet — check the sheet is published and that the cell ranges in CONFIG still match the tab layout.'); return; }
     if(catData.misaligned){ note('Bracket rows do not line up with the sheet — the tab layout has moved from what CONFIG expects.'); return; }
-    const ROUND_LABELS={R16:'Round of 16', QF:'Quarter-Finals', SF:'Semi-Finals', F:'Finals'};
-    const ROUNDS=['R16','QF','SF','F'];
+    const ROUND_LABELS={R32:'Round of 32', R16:'Round of 16', QF:'Quarter-Finals', SF:'Semi-Finals', F:'Finals'};
+    const ROUNDS=['R32','R16','QF','SF','F'];
     let html='';
     ROUNDS.forEach(rk=>{
       const matches=catData.rounds[rk]||[];
